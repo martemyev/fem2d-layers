@@ -1,0 +1,13 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#include <string>
+
+#cmakedefine DEBUG
+#cmakedefine TESTING
+#cmakedefine HAVE_64BIT_SIZE_T
+
+const std::string TEST_DIR = "@TEST_DIR@";
+const std::string RESULTS_DIR  = "@RESULTS_DIR@";
+
+#endif // CONFIG_H
