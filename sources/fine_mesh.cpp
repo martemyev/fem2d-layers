@@ -311,3 +311,18 @@ Point FineMesh::min_coord() const
 {
   return _min_coord;
 }
+
+
+
+unsigned int FineMesh::n_lines() const
+{
+  return _lines.size();
+}
+
+
+
+Line FineMesh::line(unsigned int number) const
+{
+  expect(number >= 0 && number < _lines.size(), "Incorrect input parameter");
+  return _lines[number];
+}

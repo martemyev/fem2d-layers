@@ -166,7 +166,7 @@ void Triangle::local_mass_matrix(double **loc_mat) const
 
 
 
-void Triangle::local_stiffness_matrix(double **loc_mat) const
+void Triangle::local_stiffness_matrix(double **loc_mat, double coef_a) const
 {
   expect(fabs(_detD) > 1e-15,
          "An attempt to calculate a local matrix for a singular triangle (detD = " + d2s(_detD, true) + ")");
@@ -175,10 +175,9 @@ void Triangle::local_stiffness_matrix(double **loc_mat) const
   {
   case n_dofs_first:
   {
-    const double a = 1.; // averaged coefficient
     for (int i = 0; i < n_dofs_first; ++i)
       for (int j = 0; j < n_dofs_first; ++j)
-        loc_mat[i][j] = a * fabs(_detD) * (_A[i]*_A[j] + _B[i]*_B[j]) / 2.;
+        loc_mat[i][j] = coef_a * fabs(_detD) * (_A[i]*_A[j] + _B[i]*_B[j]) / 2.;
     return;
   }
   default:
@@ -211,7 +210,9 @@ void Triangle::calculate_barycentric(const std::vector<Point> &mesh_vertices)
 
 
 
-void Triangle::local_rhs_vector(double *loc_vec, double(*rhs_func)(const Point &point, double t), const std::vector<Point> &mesh_vertices, double time) const
+void Triangle::local_rhs_vector(double *loc_vec,
+                                double(*rhs_func)(const Point &point, double t, const Parameters &par),
+                                const std::vector<Point> &mesh_vertices, double time, const Parameters &param) const
 {
   expect(fabs(_detD) > 1e-15,
          "An attempt to calculate a local matrix for a singular triangle (detD = " + d2s(_detD, true) + ")");
@@ -228,7 +229,7 @@ void Triangle::local_rhs_vector(double *loc_vec, double(*rhs_func)(const Point &
     {
       loc_vec[i] = 0.;
       for (int j = 0; j < n_dofs_first; ++j)
-        loc_vec[i] += mat[i][j] * rhs_func(mesh_vertices[_vertices[j]], time);
+        loc_vec[i] += mat[i][j] * rhs_func(mesh_vertices[_vertices[j]], time, param);
       loc_vec[i] *= fabs(_detD) / 24.;
     }
     return;

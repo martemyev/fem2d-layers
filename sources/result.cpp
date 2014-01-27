@@ -23,13 +23,14 @@ void Result::write_vtu(const std::string &filename,
                        const Vec &exact_solution) const
 {
   using namespace boost::filesystem;
-  require(extension(filename) == ".vtu", "The extension of the file ('" + extension(filename) + "') is not suitable for this function.");
+  expect(extension(filename) == ".vtu", "The extension of the file ('" + extension(filename) + "') is not suitable for this function.");
 
-  require(_dof_handler->n_dofs() == _dof_handler->fmesh()->n_vertices(),
-          "This function should be rewritten for the case higher order basis functions"
-          "(when the number of degrees of freedom is not equal to the number of the mesh vertices");
+  expect(_dof_handler->n_dofs() == _dof_handler->fmesh()->n_vertices(),
+         "This function should be rewritten for the case higher order basis functions"
+         "(when the number of degrees of freedom is not equal to the number of the mesh vertices");
 
   std::ofstream out(filename.c_str()); // open the file for writing
+  require(out, "File " + filename + " cannot be opened");
 
   // extract the data from PETSc vectors
   std::vector<int> idx(_dof_handler->n_dofs());

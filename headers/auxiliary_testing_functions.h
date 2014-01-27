@@ -86,13 +86,14 @@ void check_csr_pattern(const CSRPattern &csr_pattern, unsigned int n_points, uns
 
 double check_elliptic_solution_dense(const std::string &meshfile,
                                      double(*an_solution)(const Point &p, double t),
-                                     double(*rhs_function)(const Point &p, double t),
+                                     double(*rhs_function)(const Point &p, double t, const Parameters &par),
                                      int prev_n_triangles = 0,
                                      double prev_rel_error = -1)
 {
   FineMesh fmesh;
   fmesh.read(TEST_DIR + "/" + meshfile);
-  DoFHandler dof_handler(&fmesh, Parameters());
+  Parameters default_param;
+  DoFHandler dof_handler(&fmesh, default_param);
 
   // create vectors
   Vec system_rhs; // right hand side vector
@@ -120,8 +121,8 @@ double check_elliptic_solution_dense(const std::string &meshfile,
   for (int cell = 0; cell < fmesh.n_triangles(); ++cell)
   {
     Triangle triangle = fmesh.triangle(cell);
-    triangle.local_stiffness_matrix(local_stiff_mat);
-    triangle.local_rhs_vector(local_rhs_vec, rhs_function, fmesh.vertices(), time);
+    triangle.local_stiffness_matrix(local_stiff_mat, 1); // 1 is the coefficient a
+    triangle.local_rhs_vector(local_rhs_vec, rhs_function, fmesh.vertices(), time, default_param);
 
     for (int i = 0; i < triangle.n_dofs(); ++i)
     {
@@ -216,13 +217,14 @@ double check_elliptic_solution_dense(const std::string &meshfile,
 
 double check_elliptic_solution_sparse(const std::string &meshfile,
                                       double(*an_solution)(const Point &p, double t),
-                                      double(*rhs_function)(const Point &p, double t),
+                                      double(*rhs_function)(const Point &p, double t, const Parameters &par),
                                       int prev_n_triangles = 0,
                                       double prev_rel_error = -1)
 {
   FineMesh fmesh;
   fmesh.read(TEST_DIR + "/" + meshfile);
-  DoFHandler dof_handler(&fmesh, Parameters());
+  Parameters default_param;
+  DoFHandler dof_handler(&fmesh, default_param);
   CSRPattern csr_pattern(dof_handler);
 
   // create vectors
@@ -251,8 +253,8 @@ double check_elliptic_solution_sparse(const std::string &meshfile,
   for (int cell = 0; cell < fmesh.n_triangles(); ++cell)
   {
     Triangle triangle = fmesh.triangle(cell);
-    triangle.local_stiffness_matrix(local_stiff_mat);
-    triangle.local_rhs_vector(local_rhs_vec, rhs_function, fmesh.vertices(), time);
+    triangle.local_stiffness_matrix(local_stiff_mat, 1); // 1 is the coefficient a
+    triangle.local_rhs_vector(local_rhs_vec, rhs_function, fmesh.vertices(), time, default_param);
 
     for (int i = 0; i < triangle.n_dofs(); ++i)
     {

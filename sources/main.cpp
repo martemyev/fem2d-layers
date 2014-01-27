@@ -12,6 +12,9 @@ int main(int argc, char **argv)
 {
   PetscInitialize(&argc, &argv, NULL, NULL);
 
+  Parameters param(argc, argv);
+  param.establish_environment();
+
   // time measurement
   boost::timer::auto_cpu_timer boost_timer;
 
@@ -22,7 +25,6 @@ int main(int argc, char **argv)
   std::cout << "\nTesting procedures finished (" << test_ret << " is returned)\n\n";
 #endif
 
-  Parameters param(argc, argv);
 #if defined(DEBUG)
   std::cout << param.print() << std::endl;
 #endif

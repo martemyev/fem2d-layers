@@ -70,6 +70,17 @@ public:
              */
   Point min_coord() const;
 
+            /**
+             * Get the number of the boundary lines
+             */
+  unsigned int n_lines() const;
+
+            /**
+             * Get the copy of the line
+             * @param number - serial number of the line
+             */
+  Line line(unsigned int number) const;
+
 
 private:
             /**

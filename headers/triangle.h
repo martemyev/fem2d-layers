@@ -3,6 +3,7 @@
 
 #include "mesh_element.h"
 #include "point.h"
+#include "parameters.h"
 
 /**
  * Triangle - 2-dimensional simplex.
@@ -139,14 +140,19 @@ public:
              * Generate the local stiffness matrix for the triangle
              * @param loc_mat - output data, generated local matrix
              */
-  void local_stiffness_matrix(double **loc_mat) const;
+  void local_stiffness_matrix(double **loc_mat, double coef_a) const;
 
             /**
              * Generate the local rhs vector
              * @param loc_vec - output vector
              * @param rhs_func - pointer to an rhs function
+             * @param param - parameters of the task, some of them are used in rhs function
+             * @param mesh_vertices - all mesh vertices
+             * @param time - particular time for which we calculate this rhs vector
              */
-  void local_rhs_vector(double *loc_vec, double(*rhs_func)(const Point &point, double t), const std::vector<Point> &mesh_vertices, double time = 0.) const;
+  void local_rhs_vector(double *loc_vec,
+                        double(*rhs_func)(const Point &point, double t, const Parameters &par),
+                        const std::vector<Point> &mesh_vertices, double time, const Parameters &param) const;
 
 
 private:

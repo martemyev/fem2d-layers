@@ -17,6 +17,12 @@ std::string d2s(double x, bool scientific, int precision)
     o.setf(std::ios::scientific);
     o.precision(precision);
   }
+  else
+  {
+    // if the representation is not scientific
+    // precision plays the role of the string length
+    o.precision(precision);
+  }
   if (!(o << x))
     throw std::runtime_error("Bad conversion from double to string!");
   return o.str();

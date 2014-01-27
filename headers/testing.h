@@ -13,6 +13,7 @@
 #include "petscmat.h"
 #include "petscksp.h"
 #include "math_functions.h"
+#include "acoustic2d.h"
 #include <gtest/gtest.h>
 #include <algorithm>
 #include "analytic_functions.h"
@@ -259,6 +260,23 @@ TEST(CSRPattern, check_that_pattern_doesnt_fall)
   fmesh.read(TEST_DIR + "/test_mesh_1.msh");
   DoFHandler dof_handler(&fmesh, Parameters()); // default parameters
   EXPECT_NO_THROW(CSRPattern csr_pattern(dof_handler)); // make a CSR pattern
+}
+
+
+
+// =================================
+//
+// =================================
+TEST(Acoustic2D, check_fall_without_comp_environment)
+{
+  Parameters d_p;
+  EXPECT_ANY_THROW(Acoustic2D task(&d_p)); // attempt to launch the solver with default parameters
+
+  Parameters *de_p = new Parameters();
+  EXPECT_ANY_THROW(Acoustic2D task(de_p)); // attempt to launch the solver with default parameters
+
+  Parameters *def_p;
+  EXPECT_ANY_THROW(Acoustic2D task(def_p)); // attempt to launch the solver with default parameters
 }
 
 
