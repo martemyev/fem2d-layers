@@ -25,9 +25,9 @@ int main(int argc, char **argv)
   std::cout << "\nTesting procedures finished (" << test_ret << " is returned)\n\n";
 #endif
 
-#if defined(DEBUG)
+//#if defined(DEBUG)
   std::cout << param.print() << std::endl;
-#endif
+//#endif
 
   Acoustic2D problem(&param);
   problem.solve();

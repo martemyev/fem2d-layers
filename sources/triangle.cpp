@@ -140,7 +140,7 @@ void Triangle::dof(unsigned int num, unsigned int value)
 
 
 
-void Triangle::local_mass_matrix(double **loc_mat) const
+void Triangle::local_mass_matrix(double **loc_mat, double coef_alpha) const
 {
   expect(fabs(_detD) > 1e-15,
          "An attempt to calculate a local matrix for a singular triangle (detD = " + d2s(_detD, true) + ")");
@@ -153,10 +153,10 @@ void Triangle::local_mass_matrix(double **loc_mat) const
                                          { 1., 2., 1. },
                                          { 1., 1., 2. }
                                        };
-    const double rho = 1.; // averaged coefficient
+    //const double alpha = 1.; // averaged coefficient
     for (int i = 0; i < n_dofs_first; ++i)
       for (int j = 0; j < n_dofs_first; ++j)
-        loc_mat[i][j] = rho * fabs(_detD) * mat[i][j] / 24.;
+        loc_mat[i][j] = coef_alpha * fabs(_detD) * mat[i][j] / 24.;
     return;
   }
   default:
@@ -166,7 +166,7 @@ void Triangle::local_mass_matrix(double **loc_mat) const
 
 
 
-void Triangle::local_stiffness_matrix(double **loc_mat, double coef_a) const
+void Triangle::local_stiffness_matrix(double **loc_mat, double coef_beta) const
 {
   expect(fabs(_detD) > 1e-15,
          "An attempt to calculate a local matrix for a singular triangle (detD = " + d2s(_detD, true) + ")");
@@ -177,7 +177,7 @@ void Triangle::local_stiffness_matrix(double **loc_mat, double coef_a) const
   {
     for (int i = 0; i < n_dofs_first; ++i)
       for (int j = 0; j < n_dofs_first; ++j)
-        loc_mat[i][j] = coef_a * fabs(_detD) * (_A[i]*_A[j] + _B[i]*_B[j]) / 2.;
+        loc_mat[i][j] = coef_beta * fabs(_detD) * (_A[i]*_A[j] + _B[i]*_B[j]) / 2.;
     return;
   }
   default:
@@ -237,4 +237,19 @@ void Triangle::local_rhs_vector(double *loc_vec,
   default:
     require(false, "Unknown fe order for generating local matrix");
   }
+}
+
+
+
+Point Triangle::center(const std::vector<Point> &points) const
+{
+  double cen_coord[Point::n_coord];
+  for (int i = 0; i < Point::n_coord; ++i)
+  {
+    cen_coord[i] = 0.;
+    for (int v = 0; v < Triangle::n_vertices; ++v)
+      cen_coord[i] += points[_vertices[v]].coord(i);
+    cen_coord[i] /= Triangle::n_vertices;
+  }
+  return Point(cen_coord);
 }

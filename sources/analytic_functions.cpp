@@ -15,9 +15,11 @@ double rhs_function(const Point &p, double t, const Parameters &param)
   const double y = p.coord(1);
   const double h = param.SOURCE_SUPPORT; // some constant
   const double f = param.SOURCE_FREQUENCY; // frequency, Hz
+  const double xc = param.SOURCE_CENTER_X; // x-coordinate of the source center
+  const double yc = param.SOURCE_CENTER_Y; // y-coordinate of the source center
   const double pi = 3.141592654;
   const double part = pi*pi*f*f*(t - 2./f)*(t - 2./f);
-  return h*h * exp(-h*h*((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5))) * (1 - 2*part) * exp(-part);
+  return h*h * exp(-h*h*((x - xc)*(x - xc) + (y - yc)*(y - yc))) * (1. - 2.*part) * exp(-part);
 }
 
 

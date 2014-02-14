@@ -7,11 +7,13 @@
 #include "math_functions.h"
 #include <iostream>
 #include <algorithm>
+#include <fstream>
 
 
 Acoustic2D::Acoustic2D(Parameters *param)
   : _param(param)
 {
+  require(_param->FE_ORDER == 1, "This fe order hasn't been implemented");
   require(_param->RES_DIR != "", "Computation environment was not established through Parameter function");
 }
 
@@ -63,19 +65,39 @@ void Acoustic2D::solve()
   }
 
   // fill up the array of coefficient a
-  double *coef_a = new double[_fmesh.n_triangles()];
+  double *coef_alpha = new double[_fmesh.n_triangles()];
+  double *coef_beta  = new double[_fmesh.n_triangles()];
   for (int cell = 0; cell < _fmesh.n_triangles(); ++cell)
   {
-    Triangle triangle = _fmesh.triangle(cell);
-    coef_a[cell] = (triangle.material_id() == _param->INCL_DOMAIN ? _param->COEF_A_2_VALUE : _param->COEF_A_1_VALUE);
+    const Triangle triangle = _fmesh.triangle(cell);
+    if (triangle.material_id() == _param->INCL_DOMAIN)
+    {
+      coef_alpha[cell] = _param->COEF_ALPHA_2_VALUE; // coefficient in the inclusion
+      coef_beta[cell]  = _param->COEF_BETA_2_VALUE;  // coefficient in the inclusion
+    }
+    else if (_param->INCL_RADIUS > 1e-8) // if the radius of the inclusion is not zero
+    {
+      const Point incl_center(_param->INCL_CENTER_X, _param->INCL_CENTER_Y);
+      const Point tri_center = triangle.center(_fmesh.vertices());
+      if (norm(tri_center - incl_center) < _param->INCL_RADIUS) // the center of the triangle is inside the circular inclusion
+      {
+        coef_alpha[cell] = _param->COEF_ALPHA_2_VALUE; // coefficient in the inclusion
+        coef_beta[cell]  = _param->COEF_BETA_2_VALUE;  // coefficient in the inclusion
+      }
+    }
+    else // in all other cases, it is the main domain
+    {
+      coef_alpha[cell] = _param->COEF_ALPHA_1_VALUE; // coefficient in the main domain
+      coef_beta[cell]  = _param->COEF_BETA_1_VALUE;  // coefficient in the main domain
+    }
   }
 
   // assemble the matrices and the rhs vector
   for (int cell = 0; cell < _fmesh.n_triangles(); ++cell)
   {
-    Triangle triangle = _fmesh.triangle(cell);
-    triangle.local_mass_matrix(local_mass_mat);
-    triangle.local_stiffness_matrix(local_stiff_mat, coef_a[cell]);
+    const Triangle triangle = _fmesh.triangle(cell);
+    triangle.local_mass_matrix(local_mass_mat, coef_alpha[cell]);
+    triangle.local_stiffness_matrix(local_stiff_mat, coef_beta[cell]);
 
     for (int i = 0; i < triangle.n_dofs(); ++i)
     {
@@ -90,11 +112,16 @@ void Acoustic2D::solve()
     }
   }
 
-  delete[] coef_a;
+  delete[] coef_alpha;
+  delete[] coef_beta;
 
   // free the memory
   for (int i = 0; i < Triangle::n_dofs_first; ++i)
+  {
+    delete[] local_mass_mat[i];
     delete[] local_stiff_mat[i];
+  }
+  delete[] local_mass_mat;
   delete[] local_stiff_mat;
 
   MatAssemblyBegin(_global_mass_mat, MAT_FINAL_ASSEMBLY);
@@ -219,8 +246,26 @@ void Acoustic2D::solve_explicit(const DoFHandler &dof_handler, const CSRPattern 
     if ((_param->PRINT_VTU && (time_step % _param->VTU_STEP == 0)) || (time_step == _param->N_TIME_STEPS))
     {
       Result res(&dof_handler);
-      std::string fname = _param->VTU_DIR + "/res-" + d2s(time) + ".vtu";
+      std::string fname = _param->VTU_DIR + "/res-" + d2s(time_step) + ".vtu";
       res.write_vtu(fname, solution); //, exact_solution);
+    }
+
+    if ((_param->SAVE_SOL && (time_step % _param->SOL_STEP == 0)) || (time_step == _param->N_TIME_STEPS))
+    {
+      // extract data from PETSc vector
+      std::vector<int> idx(csr_pattern.order());
+      std::iota(idx.begin(), idx.end(), 0); // idx = { 0, 1, 2, 3, .... }
+      std::vector<double> solution_values(csr_pattern.order());
+      VecGetValues(solution, csr_pattern.order(), &idx[0], &solution_values[0]);
+      // write the solution to the file
+      std::string fname = _param->SOL_DIR + "/sol-" + d2s(time_step) + ".dat";
+      std::ofstream out(fname);
+      out.setf(std::ios::scientific);
+      out.precision(16);
+      out << csr_pattern.order() << "\n";
+      for (int i = 0; i < csr_pattern.order(); ++i)
+        out << solution_values[i] << "\n";
+      out.close();
     }
 
   } // time loop

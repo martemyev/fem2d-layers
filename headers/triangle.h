@@ -134,13 +134,13 @@ public:
              * Generate the local mass matrix for the triangle
              * @param loc_mat - output data, generated local matrix
              */
-  void local_mass_matrix(double **loc_mat) const;
+  void local_mass_matrix(double **loc_mat, double coef_alpha) const;
 
             /**
              * Generate the local stiffness matrix for the triangle
              * @param loc_mat - output data, generated local matrix
              */
-  void local_stiffness_matrix(double **loc_mat, double coef_a) const;
+  void local_stiffness_matrix(double **loc_mat, double coef_beta) const;
 
             /**
              * Generate the local rhs vector
@@ -153,6 +153,12 @@ public:
   void local_rhs_vector(double *loc_vec,
                         double(*rhs_func)(const Point &point, double t, const Parameters &par),
                         const std::vector<Point> &mesh_vertices, double time, const Parameters &param) const;
+
+            /**
+             * Get the center of the triangle
+             * @param vertices - vertices of the mesh
+             */
+  Point center(const std::vector<Point> &vertices) const;
 
 
 private:

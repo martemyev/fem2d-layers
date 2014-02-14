@@ -63,6 +63,10 @@ public:
              */
   void coord(unsigned int number, double value);
 
+  Point& operator /=(double d);
+
+  friend Point operator -(const Point &p1, const Point &p2);
+
 private:
             /**
              * Cartesian coordinates of the point

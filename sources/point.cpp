@@ -67,3 +67,22 @@ void Point::coord(unsigned int number, double value)
 
   _coord[number] = value;
 }
+
+
+
+Point& Point::operator /=(double d)
+{
+  for (int i = 0; i < n_coord; ++i)
+    _coord[i] /= d;
+  return *this;
+}
+
+
+
+Point operator -(const Point &p1, const Point &p2)
+{
+  Point res;
+  for (int i = 0; i < Point::n_coord; ++i)
+    res._coord[i] = p1._coord[i] - p2._coord[i];
+  return res;
+}
