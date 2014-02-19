@@ -13,7 +13,7 @@ endif(CMAKE_BUILD_TYPE MATCHES Release)
 
 
 # --- define and connect some important directories ---
-set(INSTALL_DIR /u/artemyev/install)
+set(INSTALL_DIR $ENV{HOME}/install)
 set(INCLUDE_DIR ${INSTALL_DIR}/include)
 set(LIB_DIR     ${INSTALL_DIR}/lib)
 include_directories(${INCLUDE_DIR})

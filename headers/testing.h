@@ -123,8 +123,8 @@ TEST(FineMesh, read_with_physical_and_partitions)
   EXPECT_EQ(fmesh.triangle(0).material_id(), triangles[0].material_id());
   EXPECT_EQ(fmesh.triangle(0).material_id(), 1);
   // check partition id
-  EXPECT_EQ(fmesh.triangle(0).partition_id(), triangles[0].partition_id());
-  EXPECT_EQ(fmesh.triangle(0).partition_id(), 1);
+  EXPECT_EQ(fmesh.triangle(0).partition_id() + 1, triangles[0].partition_id());
+  EXPECT_EQ(fmesh.triangle(0).partition_id() + 1, 1);
   // check the number of ghost cells
   EXPECT_EQ(fmesh.triangle(0).n_ghost_cells(), triangles[0].n_ghost_cells());
   EXPECT_EQ(fmesh.triangle(0).n_ghost_cells(), 0);
@@ -140,16 +140,16 @@ TEST(FineMesh, read_with_physical_and_partitions)
   EXPECT_EQ(fmesh.triangle(8).material_id(), triangles[1].material_id());
   EXPECT_EQ(fmesh.triangle(8).material_id(), 1);
   // check partition id
-  EXPECT_EQ(fmesh.triangle(8).partition_id(), triangles[1].partition_id());
-  EXPECT_EQ(fmesh.triangle(8).partition_id(), 5);
+  EXPECT_EQ(fmesh.triangle(8).partition_id() + 1, triangles[1].partition_id());
+  EXPECT_EQ(fmesh.triangle(8).partition_id() + 1, 5);
   // check the number of ghost cells
   EXPECT_EQ(fmesh.triangle(8).n_ghost_cells(), triangles[1].n_ghost_cells());
   EXPECT_EQ(fmesh.triangle(8).n_ghost_cells(), gc1.size());
   // check ghost cells
   for (int g = 0; g < fmesh.triangle(8).n_ghost_cells(); ++g)
   {
-    EXPECT_EQ(fmesh.triangle(8).ghost_cell(g), triangles[1].ghost_cell(g));
-    EXPECT_EQ(fmesh.triangle(8).ghost_cell(g), gc1[g]);
+    EXPECT_EQ(fmesh.triangle(8).ghost_cell(g) + 1, triangles[1].ghost_cell(g));
+    EXPECT_EQ(fmesh.triangle(8).ghost_cell(g) + 1, gc1[g]);
   }
 
   // triangle number 185
@@ -163,16 +163,16 @@ TEST(FineMesh, read_with_physical_and_partitions)
   EXPECT_EQ(fmesh.triangle(184).material_id(), triangles[2].material_id());
   EXPECT_EQ(fmesh.triangle(184).material_id(), 1);
   // check partition id
-  EXPECT_EQ(fmesh.triangle(184).partition_id(), triangles[2].partition_id());
-  EXPECT_EQ(fmesh.triangle(184).partition_id(), 2);
+  EXPECT_EQ(fmesh.triangle(184).partition_id() + 1, triangles[2].partition_id());
+  EXPECT_EQ(fmesh.triangle(184).partition_id() + 1, 2);
   // check the number of ghost cells
   EXPECT_EQ(fmesh.triangle(184).n_ghost_cells(), triangles[2].n_ghost_cells());
   EXPECT_EQ(fmesh.triangle(184).n_ghost_cells(), gc2.size());
   // check ghost cells
   for (int g = 0; g < fmesh.triangle(184).n_ghost_cells(); ++g)
   {
-    EXPECT_EQ(fmesh.triangle(184).ghost_cell(g), triangles[2].ghost_cell(g));
-    EXPECT_EQ(fmesh.triangle(184).ghost_cell(g), gc2[g]);
+    EXPECT_EQ(fmesh.triangle(184).ghost_cell(g) + 1, triangles[2].ghost_cell(g));
+    EXPECT_EQ(fmesh.triangle(184).ghost_cell(g) + 1, gc2[g]);
   }
 
   // triangle number 318
@@ -186,16 +186,16 @@ TEST(FineMesh, read_with_physical_and_partitions)
   EXPECT_EQ(fmesh.triangle(317).material_id(), triangles[3].material_id());
   EXPECT_EQ(fmesh.triangle(317).material_id(), 11);
   // check partition id
-  EXPECT_EQ(fmesh.triangle(317).partition_id(), triangles[3].partition_id());
-  EXPECT_EQ(fmesh.triangle(317).partition_id(), 4);
+  EXPECT_EQ(fmesh.triangle(317).partition_id() + 1, triangles[3].partition_id());
+  EXPECT_EQ(fmesh.triangle(317).partition_id() + 1, 4);
   // check the number of ghost cells
   EXPECT_EQ(fmesh.triangle(317).n_ghost_cells(), triangles[3].n_ghost_cells());
   EXPECT_EQ(fmesh.triangle(317).n_ghost_cells(), gc3.size());
   // check ghost cells
   for (int g = 0; g < fmesh.triangle(317).n_ghost_cells(); ++g)
   {
-    EXPECT_EQ(fmesh.triangle(317).ghost_cell(g), triangles[3].ghost_cell(g));
-    EXPECT_EQ(fmesh.triangle(317).ghost_cell(g), gc3[g]);
+    EXPECT_EQ(fmesh.triangle(317).ghost_cell(g) + 1, triangles[3].ghost_cell(g));
+    EXPECT_EQ(fmesh.triangle(317).ghost_cell(g) + 1, gc3[g]);
   }
 
   gc1.clear();
