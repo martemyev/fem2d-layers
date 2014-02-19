@@ -2,11 +2,11 @@
 #define ACOUSTIC2D_H
 
 #include "config.h"
-#include "fine_mesh.h"
+#include "fem/fine_mesh.h"
 #include "petscvec.h"
 #include "petscmat.h"
-#include "dof_handler.h"
-#include "csr_pattern.h"
+#include "fem/dof_handler.h"
+#include "fem/csr_pattern.h"
 
 class Parameters;
 

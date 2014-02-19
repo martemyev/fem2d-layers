@@ -2,17 +2,17 @@
 #define TESTING_H
 
 #include "config.h"
-#include "point.h"
-#include "triangle.h"
-#include "fine_mesh.h"
+#include "fem/point.h"
+#include "fem/triangle.h"
+#include "fem/fine_mesh.h"
 #include "auxiliary_testing_functions.h"
-#include "dof_handler.h"
-#include "csr_pattern.h"
-#include "parameters.h"
+#include "fem/dof_handler.h"
+#include "fem/csr_pattern.h"
+#include "fem/parameters.h"
 #include "petscvec.h"
 #include "petscmat.h"
 #include "petscksp.h"
-#include "math_functions.h"
+#include "fem/math_functions.h"
 #include "acoustic2d.h"
 #include <gtest/gtest.h>
 #include <algorithm>
@@ -24,7 +24,8 @@
 // =================================
 TEST(FineMesh, read_without_physical_and_partitions)
 {
-  FineMesh fmesh;
+  Parameters default_param;
+  FineMesh fmesh(&default_param);
   fmesh.read(TEST_DIR + "/test_mesh_0.msh");
 
   Point points[] = { Point(0, 0, 0),
@@ -70,7 +71,8 @@ TEST(FineMesh, read_without_physical_and_partitions)
 // =================================
 TEST(FineMesh, read_with_physical_and_partitions)
 {
-  FineMesh fmesh;
+  Parameters default_param;
+  FineMesh fmesh(&default_param);
   fmesh.read(TEST_DIR + "/test_mesh_1.msh");
 
   // check the number of the mesh vertices
@@ -211,7 +213,11 @@ TEST(FineMesh, read_with_physical_and_partitions)
 // =================================
 TEST(CSRPattern, check_pattern_and_other_stuff)
 {
-  FineMesh fmesh;
+  Parameters default_param;
+  default_param.X_END = 4;
+  default_param.Y_END = 4;
+
+  FineMesh fmesh(&default_param);
   fmesh.read(TEST_DIR + "/test_small_10_4.msh");
 
   const unsigned int n_points = 10;
@@ -228,10 +234,12 @@ TEST(CSRPattern, check_pattern_and_other_stuff)
                    };
   compare_points(fmesh, n_points, points);
 
-  DoFHandler dof_handler(&fmesh, Parameters()); // default parameters
+  DoFHandler dof_handler(&fmesh);
+  dof_handler.distribute_dofs(default_param, CG); // default parameters
   check_dof_handler(dof_handler, fmesh, 1); // 1 means first order basis functions
 
-  CSRPattern csr_pattern(dof_handler);
+  CSRPattern csr_pattern;
+  csr_pattern.make_sparse_format(dof_handler, CG);
 
   unsigned int row[] = { 0, 4, 10, 13, 18, 23, 30, 36, 40, 45, 48 };
   unsigned int col[] = { 0, 1, 3, 4,
@@ -246,7 +254,8 @@ TEST(CSRPattern, check_pattern_and_other_stuff)
                          6, 8, 9
                        };
 
-  check_csr_pattern(csr_pattern, n_points, row, col);
+  check_csr_pattern(csr_pattern, n_points, &row[0], &col[0]);
+
 }
 
 
@@ -256,10 +265,13 @@ TEST(CSRPattern, check_pattern_and_other_stuff)
 // =================================
 TEST(CSRPattern, check_that_pattern_doesnt_fall)
 {
-  FineMesh fmesh;
+  Parameters default_params;
+  FineMesh fmesh(&default_params);
   fmesh.read(TEST_DIR + "/test_mesh_1.msh");
-  DoFHandler dof_handler(&fmesh, Parameters()); // default parameters
-  EXPECT_NO_THROW(CSRPattern csr_pattern(dof_handler)); // make a CSR pattern
+  DoFHandler dof_handler(&fmesh);
+  dof_handler.distribute_dofs(default_params, CG); // default parameters
+  CSRPattern csr_pattern;
+  EXPECT_NO_THROW(csr_pattern.make_sparse_format(dof_handler, CG)); // make a CSR pattern
 }
 
 

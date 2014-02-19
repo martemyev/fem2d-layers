@@ -1,8 +1,8 @@
 #ifndef ANALYTIC_FUNCTIONS_H
 #define ANALYTIC_FUNCTIONS_H
 
-#include "point.h"
-#include "parameters.h"
+#include "fem/point.h"
+#include "fem/parameters.h"
 
 double analytic_solution(const Point &p);
 double rhs_function(const Point &p, double time, const Parameters &param);

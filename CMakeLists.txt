@@ -28,6 +28,14 @@ add_definitions(-std=c++0x)
 # ---------------
 
 
+# --- fem library ---
+find_library(FEM_LIB fem ${LIB_DIR})
+if(NOT FEM_LIB)
+  message(FATAL_ERROR "fem library was not found!")
+endif(NOT FEM_LIB)
+# -------------------
+
+
 # --- boost ---
 #find_library(BOOST_PO_LIB libboost_program_options.so ${LIB_DIR})
 #if(NOT BOOST_PO_LIB)
@@ -93,6 +101,7 @@ FILE(GLOB HDR_LIST "${PROJECT_SOURCE_DIR}/headers/*.h")      # all .h files
 
 # ------
 message("build type   " ${CMAKE_BUILD_TYPE})
+message("fem lib      " ${FEM_LIB})
 message("gtest lib    " ${GTEST_LIB})
 message("boost libs   " ${Boost_LIBRARIES})
 message("petsc lib    " ${PETSC_LIB})
@@ -103,5 +112,5 @@ message("HDR_LIST     " ${HDR_LIST})
 
 
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${HDR_LIST})
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${GTEST_LIB} ${PETSC_LIB} ${MPI_LIB})
+target_link_libraries(${PROJECT_NAME} ${FEM_LIB} ${Boost_LIBRARIES} ${GTEST_LIB} ${PETSC_LIB} ${MPI_LIB})
 

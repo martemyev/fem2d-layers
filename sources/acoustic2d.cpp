@@ -1,17 +1,18 @@
 #include "acoustic2d.h"
-#include "parameters.h"
+#include "fem/parameters.h"
 #include "petscksp.h"
-#include "auxiliary_functions.h"
+#include "fem/auxiliary_functions.h"
 #include "analytic_functions.h"
-#include "result.h"
-#include "math_functions.h"
+#include "fem/result.h"
+#include "fem/math_functions.h"
 #include <iostream>
 #include <algorithm>
 #include <fstream>
 
 
 Acoustic2D::Acoustic2D(Parameters *param)
-  : _param(param)
+  : _param(param),
+    _fmesh(param)
 {
   require(_param->FE_ORDER == 1, "This fe order hasn't been implemented");
   require(_param->RES_DIR != "", "Computation environment was not established through Parameter function");
@@ -37,13 +38,15 @@ void Acoustic2D::solve()
   std::cout << "n_nodes = " << _fmesh.n_vertices() << std::endl;
 #endif
 
-  DoFHandler dof_handler(&_fmesh, *_param);
+  DoFHandler dof_handler(&_fmesh);
+  dof_handler.distribute_dofs(*_param, CG);
 
   // create sparse format based on the distribution of degrees of freedom.
   // since we use first order basis functions, and then
   // all dofs are associated with the mesh vertices,
   // sparse format is based on connectivity of the mesh vertices
-  CSRPattern csr_pattern(dof_handler);
+  CSRPattern csr_pattern;
+  csr_pattern.make_sparse_format(dof_handler, CG);
 
   expect(csr_pattern.order() == dof_handler.n_dofs(), "Error");
 #if defined(DEBUG)
@@ -72,23 +75,23 @@ void Acoustic2D::solve()
     const Triangle triangle = _fmesh.triangle(cell);
     if (triangle.material_id() == _param->INCL_DOMAIN)
     {
-      coef_alpha[cell] = _param->COEF_ALPHA_2_VALUE; // coefficient in the inclusion
-      coef_beta[cell]  = _param->COEF_BETA_2_VALUE;  // coefficient in the inclusion
+      coef_alpha[cell] = _param->COEF_A_VALUES[1]; // coefficient in the inclusion
+      coef_beta[cell]  = _param->COEF_B_VALUES[1];  // coefficient in the inclusion
     }
-    else if (_param->INCL_RADIUS > 1e-8) // if the radius of the inclusion is not zero
-    {
-      const Point incl_center(_param->INCL_CENTER_X, _param->INCL_CENTER_Y);
-      const Point tri_center = triangle.center(_fmesh.vertices());
-      if (norm(tri_center - incl_center) < _param->INCL_RADIUS) // the center of the triangle is inside the circular inclusion
-      {
-        coef_alpha[cell] = _param->COEF_ALPHA_2_VALUE; // coefficient in the inclusion
-        coef_beta[cell]  = _param->COEF_BETA_2_VALUE;  // coefficient in the inclusion
-      }
-    }
+//    else if (_param->INCL_RADIUS > 1e-8) // if the radius of the inclusion is not zero
+//    {
+//      const Point incl_center(_param->INCL_CENTER_X, _param->INCL_CENTER_Y);
+//      const Point tri_center = triangle.center(_fmesh.vertices());
+//      if (norm(tri_center - incl_center) < _param->INCL_RADIUS) // the center of the triangle is inside the circular inclusion
+//      {
+//        coef_alpha[cell] = _param->COEF_ALPHA_2_VALUE; // coefficient in the inclusion
+//        coef_beta[cell]  = _param->COEF_BETA_2_VALUE;  // coefficient in the inclusion
+//      }
+//    }
     else // in all other cases, it is the main domain
     {
-      coef_alpha[cell] = _param->COEF_ALPHA_1_VALUE; // coefficient in the main domain
-      coef_beta[cell]  = _param->COEF_BETA_1_VALUE;  // coefficient in the main domain
+      coef_alpha[cell] = _param->COEF_A_VALUES[0]; // coefficient in the main domain
+      coef_beta[cell]  = _param->COEF_B_VALUES[0]; // coefficient in the main domain
     }
   }
 

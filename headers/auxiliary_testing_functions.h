@@ -1,18 +1,19 @@
 #ifndef AUXILARY_TESTING_FUNCTIONS_H
 #define AUXILARY_TESTING_FUNCTIONS_H
 
-#include "fine_mesh.h"
-#include "point.h"
-#include "triangle.h"
-#include "dof_handler.h"
-#include "csr_pattern.h"
+#include "fem/fine_mesh.h"
+#include "fem/point.h"
+#include "fem/triangle.h"
+#include "fem/dof_handler.h"
+#include "fem/csr_pattern.h"
 #include "petscvec.h"
 #include "petscmat.h"
 #include "petscksp.h"
-#include "math_functions.h"
-#include "auxiliary_functions.h"
+#include "fem/math_functions.h"
+#include "fem/auxiliary_functions.h"
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <iostream>
 
 
 // solver parameters
@@ -71,7 +72,7 @@ void check_dof_handler(const DoFHandler &dof_handler, const FineMesh &fmesh, uns
 
 
 
-void check_csr_pattern(const CSRPattern &csr_pattern, unsigned int n_points, unsigned int row[], unsigned int col[])
+void check_csr_pattern(const CSRPattern &csr_pattern, unsigned int n_points, unsigned int *row, unsigned int *col)
 {
   EXPECT_EQ(csr_pattern.order(), n_points);
 
@@ -90,10 +91,13 @@ double check_elliptic_solution_dense(const std::string &meshfile,
                                      int prev_n_triangles = 0,
                                      double prev_rel_error = -1)
 {
-  FineMesh fmesh;
-  fmesh.read(TEST_DIR + "/" + meshfile);
   Parameters default_param;
-  DoFHandler dof_handler(&fmesh, default_param);
+
+  FineMesh fmesh(&default_param);
+  fmesh.read(TEST_DIR + "/" + meshfile);
+
+  DoFHandler dof_handler(&fmesh);
+  dof_handler.distribute_dofs(default_param, CG);
 
   // create vectors
   Vec system_rhs; // right hand side vector
@@ -221,11 +225,13 @@ double check_elliptic_solution_sparse(const std::string &meshfile,
                                       int prev_n_triangles = 0,
                                       double prev_rel_error = -1)
 {
-  FineMesh fmesh;
-  fmesh.read(TEST_DIR + "/" + meshfile);
   Parameters default_param;
-  DoFHandler dof_handler(&fmesh, default_param);
-  CSRPattern csr_pattern(dof_handler);
+  FineMesh fmesh(&default_param);
+  fmesh.read(TEST_DIR + "/" + meshfile);
+  DoFHandler dof_handler(&fmesh);
+  dof_handler.distribute_dofs(default_param, CG);
+  CSRPattern csr_pattern;
+  csr_pattern.make_sparse_format(dof_handler, CG);
 
   // create vectors
   Vec system_rhs; // right hand side vector
