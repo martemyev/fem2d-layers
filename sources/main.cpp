@@ -29,8 +29,8 @@ int main(int argc, char **argv)
   std::cout << param.print() << std::endl;
 //#endif
 
-//  Acoustic2D problem(&param);
-//  problem.solve();
+  Acoustic2D problem(&param);
+  problem.solve_rectangles();
 
   PetscFinalize();
 

@@ -28,7 +28,8 @@ public:
             /**
              * The main function launching the calculations
              */
-  void solve();
+  void solve_triangles();
+  void solve_rectangles();
 
 
 private:
@@ -66,7 +67,8 @@ private:
              */
   void find_bound_nodes(std::vector<int> &b_nodes) const;
 
-  void solve_explicit(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
+  void solve_explicit_triangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
+  void solve_explicit_rectangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
   void solve_crank_nicolson(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
 };
 

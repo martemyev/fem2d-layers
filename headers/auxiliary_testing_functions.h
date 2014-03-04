@@ -125,8 +125,8 @@ double check_elliptic_solution_dense(const std::string &meshfile,
   for (int cell = 0; cell < fmesh.n_triangles(); ++cell)
   {
     Triangle triangle = fmesh.triangle(cell);
-    triangle.local_stiffness_matrix(local_stiff_mat, 1); // 1 is the coefficient a
-    triangle.local_rhs_vector(local_rhs_vec, rhs_function, fmesh.vertices(), time, default_param);
+    triangle.local_stiffness_matrix(1, local_stiff_mat); // 1 is the coefficient a
+    triangle.local_rhs_vector(rhs_function, fmesh.vertices(), time, default_param, local_rhs_vec);
 
     for (int i = 0; i < triangle.n_dofs(); ++i)
     {
@@ -259,8 +259,8 @@ double check_elliptic_solution_sparse(const std::string &meshfile,
   for (int cell = 0; cell < fmesh.n_triangles(); ++cell)
   {
     Triangle triangle = fmesh.triangle(cell);
-    triangle.local_stiffness_matrix(local_stiff_mat, 1); // 1 is the coefficient a
-    triangle.local_rhs_vector(local_rhs_vec, rhs_function, fmesh.vertices(), time, default_param);
+    triangle.local_stiffness_matrix(1, local_stiff_mat); // 1 is the coefficient a
+    triangle.local_rhs_vector(rhs_function, fmesh.vertices(), time, default_param, local_rhs_vec);
 
     for (int i = 0; i < triangle.n_dofs(); ++i)
     {
