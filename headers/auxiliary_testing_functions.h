@@ -7,6 +7,7 @@
 #include "fem/dof_handler.h"
 #include "fem/csr_pattern.h"
 #include "fem/finite_element.h"
+#include "fem/function.h"
 #include "petscvec.h"
 #include "petscmat.h"
 #include "petscksp.h"
@@ -89,8 +90,8 @@ void check_csr_pattern(const CSRPattern &csr_pattern, unsigned int n_points, uns
 
 void check_elliptic_solution_triangles(bool sparse,
                                        const std::string &meshfile,
-                                       double(*an_solution)(const Point &p, double t),
-                                       double(*rhs_function)(const Point &p, double t),
+                                       const Function &an_solution,
+                                       const Function &rhs_function,
                                        double &current_rel_error,
                                        int &current_n_triangles,
                                        double prev_rel_error = -1,
@@ -170,7 +171,7 @@ void check_elliptic_solution_triangles(bool sparse,
   // with ones on diagonal
   MatZeroRows(global_stiff_mat, b_nodes.size(), &b_nodes[0], 1., solution, system_rhs); // change the matrix
   for (int i = 0; i < b_nodes.size(); ++i)
-    VecSetValue(system_rhs, b_nodes[i], an_solution(fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
+    VecSetValue(system_rhs, b_nodes[i], an_solution.value(fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
 
   // solve the SLAE
   KSP ksp;
@@ -183,7 +184,7 @@ void check_elliptic_solution_triangles(bool sparse,
   for (int i = 0; i < fmesh.n_vertices(); ++i)
   {
     Point vert = fmesh.vertex(i);
-    VecSetValue(exact_solution, i, an_solution(vert, time), INSERT_VALUES);
+    VecSetValue(exact_solution, i, an_solution.value(vert, time), INSERT_VALUES);
   }
 
   current_n_triangles = fmesh.n_triangles(); // the number of triangles of fine mesh
@@ -208,8 +209,8 @@ void check_elliptic_solution_triangles(bool sparse,
 void check_elliptic_solution_rectangles(bool sparse,
                                         unsigned int N_FINE_X,
                                         unsigned int N_FINE_Y,
-                                        double(*an_solution)(const Point &p, double t),
-                                        double(*rhs_function)(const Point &p, double t),
+                                        const Function &an_solution,
+                                        const Function &rhs_function,
                                         double &current_rel_error,
                                         int &current_n_rectangles,
                                         double prev_rel_error = -1,
@@ -292,7 +293,7 @@ void check_elliptic_solution_rectangles(bool sparse,
   // with ones on diagonal
   MatZeroRows(global_stiff_mat, b_nodes.size(), &b_nodes[0], 1., solution, system_rhs); // change the matrix
   for (int i = 0; i < b_nodes.size(); ++i)
-    VecSetValue(system_rhs, b_nodes[i], an_solution(fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
+    VecSetValue(system_rhs, b_nodes[i], an_solution.value(fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
 
   // solve the SLAE
   KSP ksp;
@@ -305,7 +306,7 @@ void check_elliptic_solution_rectangles(bool sparse,
   for (int i = 0; i < fmesh.n_vertices(); ++i)
   {
     Point vert = fmesh.vertex(i);
-    VecSetValue(exact_solution, i, an_solution(vert, time), INSERT_VALUES);
+    VecSetValue(exact_solution, i, an_solution.value(vert, time), INSERT_VALUES);
   }
 
   current_n_rectangles = fmesh.n_rectangles(); // the number of rectangles of fine mesh

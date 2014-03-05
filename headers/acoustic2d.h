@@ -58,6 +58,16 @@ private:
              */
   Mat _global_stiff_mat;
 
+            /**
+             * Coefficient by time derivative
+             */
+  std::vector<double> _coef_alpha;
+
+            /**
+             * Coefficient under div
+             */
+  std::vector<double> _coef_beta;
+
   Acoustic2D(const Acoustic2D&); /** copy constructor */
   Acoustic2D& operator=(const Acoustic2D&); /** copy assignment operator */
 
@@ -65,7 +75,7 @@ private:
              * Find the list of boundary nodes
              * @param b_nodes - output list of boundary nodes
              */
-  void find_bound_nodes(std::vector<int> &b_nodes) const;
+  //void find_bound_nodes(std::vector<int> &b_nodes) const;
 
   void solve_explicit_triangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
   void solve_explicit_rectangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);

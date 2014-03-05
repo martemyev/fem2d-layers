@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 2.8)
 
 
 set(CMAKE_BUILD_TYPE Debug CACHE STRING "Debug | Release")
-set(DEBUG ON CACHE BOOL "for the internal usage - not the compiler debug options")
+set(DEBUG ON CACHE BOOL "for the internal usage - not the compiler debug options" FORCE)
 set(TESTING ON CACHE BOOL "launch testing procedures")
-set(TEST_DIR ${CMAKE_SOURCE_DIR}/test_dir/ CACHE STRING "directory with files for testing")
+set(TEST_DIR ${CMAKE_SOURCE_DIR}/test_dir/ CACHE STRING "directory with files (meshes) for testing")
 set(RESULTS_DIR ${CMAKE_SOURCE_DIR}/results/ CACHE STRING "directory with all results")
 
 if(CMAKE_BUILD_TYPE MATCHES Release)

@@ -304,8 +304,8 @@ TEST(Acoustic2D, check_fall_without_comp_environment)
   Parameters *de_p = new Parameters();
   EXPECT_ANY_THROW(Acoustic2D task(de_p)); // attempt to launch the solver with default parameters
 
-  Parameters *def_p;
-  EXPECT_ANY_THROW(Acoustic2D task(def_p)); // attempt to launch the solver with default parameters
+//  Parameters *def_p;
+//  EXPECT_ANY_THROW(Acoustic2D task(def_p)); // attempt to launch the solver with default parameters
 }
 
 
@@ -328,7 +328,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_x_plus_y)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_dense; ++i)
   {
-    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_1, an_rhs_function_1, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_1(), an_rhs_function_1(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -340,7 +340,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_x_mult_y)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_dense; ++i)
   {
-    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_2, an_rhs_function_2, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_2(), an_rhs_function_2(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -352,7 +352,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_xx_plus_yy)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_dense; ++i)
   {
-    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_3, an_rhs_function_3, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_3(), an_rhs_function_3(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -364,7 +364,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_sinx_plus_siny)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_dense; ++i)
   {
-    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_4, an_rhs_function_4, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_4(), an_rhs_function_4(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -376,7 +376,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_expx)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_dense; ++i)
   {
-    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_5, an_rhs_function_5, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_5(), an_rhs_function_5(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -393,7 +393,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_x_plus_y)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_sparse; ++i)
   {
-    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_1, an_rhs_function_1, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_1(), an_rhs_function_1(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -405,7 +405,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_x_mult_y)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_sparse; ++i)
   {
-    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_2, an_rhs_function_2, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_2(), an_rhs_function_2(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -417,7 +417,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_xx_plus_yy)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_sparse; ++i)
   {
-    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_3, an_rhs_function_3, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_3(), an_rhs_function_3(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -429,7 +429,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_sinx_plus_siny)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_sparse; ++i)
   {
-    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_4, an_rhs_function_4, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_4(), an_rhs_function_4(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -441,7 +441,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_expx)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_tri_sparse; ++i)
   {
-    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_5, an_rhs_function_5, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_5(), an_rhs_function_5(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -463,7 +463,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_x_plus_y)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_dense; ++i)
   {
-    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_1, an_rhs_function_1, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_1(), an_rhs_function_1(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -475,7 +475,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_x_mult_y)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_dense; ++i)
   {
-    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_2, an_rhs_function_2, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_2(), an_rhs_function_2(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -487,7 +487,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_xx_plus_yy)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_dense; ++i)
   {
-    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_3, an_rhs_function_3, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_3(), an_rhs_function_3(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -499,7 +499,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_sinx_plus_siny)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_dense; ++i)
   {
-    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_4, an_rhs_function_4, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_4(), an_rhs_function_4(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -511,7 +511,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_expx)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_dense; ++i)
   {
-    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_5, an_rhs_function_5, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_5(), an_rhs_function_5(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -528,7 +528,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_x_plus_y)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_sparse; ++i)
   {
-    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_1, an_rhs_function_1, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_1(), an_rhs_function_1(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -540,7 +540,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_x_mult_y)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_sparse; ++i)
   {
-    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_2, an_rhs_function_2, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_2(), an_rhs_function_2(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -552,7 +552,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_xx_plus_yy)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_sparse; ++i)
   {
-    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_3, an_rhs_function_3, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_3(), an_rhs_function_3(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -564,7 +564,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_sinx_plus_siny)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_sparse; ++i)
   {
-    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_4, an_rhs_function_4, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_4(), an_rhs_function_4(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }
@@ -576,7 +576,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_expx)
   int cur_n_cells, prev_n_cells = 0;
   for (int i = 0; i < N_times_rec_sparse; ++i)
   {
-    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_5, an_rhs_function_5, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_5(), an_rhs_function_5(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
     prev_n_cells = cur_n_cells;
   }

@@ -165,6 +165,9 @@ void Acoustic2D::solve_rectangles()
 
   DoFHandler dof_handler(&_fmesh);
   dof_handler.distribute_dofs(fe, CG);
+#if defined(DEBUG)
+  std::cout << "n_dofs = " << dof_handler.n_dofs() << std::endl;
+#endif
 
   // create sparse format based on the distribution of degrees of freedom.
   // since we use first order basis functions, and then
@@ -172,11 +175,12 @@ void Acoustic2D::solve_rectangles()
   // sparse format is based on connectivity of the mesh vertices
   CSRPattern csr_pattern;
   csr_pattern.make_sparse_format(dof_handler, CG);
+#if defined(DEBUG)
+  std::cout << "csr_order = " << csr_pattern.order() << std::endl;
+#endif
 
   expect(csr_pattern.order() == dof_handler.n_dofs(), "Error");
-#if defined(DEBUG)
-  std::cout << "n_dofs = " << dof_handler.n_dofs() << std::endl;
-#endif
+
 
   // allocate memory
   VecCreateSeq(PETSC_COMM_SELF, csr_pattern.order(), &_global_rhs);
@@ -192,45 +196,19 @@ void Acoustic2D::solve_rectangles()
     local_stiff_mat[i] = new double[Rectangle::n_dofs_first];
   }
 
-  // fill up the array of coefficient a
-  double *coef_alpha = new double[_fmesh.n_rectangles()];
-  double *coef_beta  = new double[_fmesh.n_rectangles()];
-  for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
-  {
-    const Rectangle rectangle = _fmesh.rectangle(cell);
-    if (rectangle.material_id() == _param->INCL_DOMAIN)
-    {
-      coef_alpha[cell] = _param->COEF_A_VALUES[1]; // coefficient in the inclusion
-      coef_beta[cell]  = _param->COEF_B_VALUES[1];  // coefficient in the inclusion
-    }
-//    else if (_param->INCL_RADIUS > 1e-8) // if the radius of the inclusion is not zero
-//    {
-//      const Point incl_center(_param->INCL_CENTER_X, _param->INCL_CENTER_Y);
-//      const Point tri_center = triangle.center(_fmesh.vertices());
-//      if (norm(tri_center - incl_center) < _param->INCL_RADIUS) // the center of the triangle is inside the circular inclusion
-//      {
-//        coef_alpha[cell] = _param->COEF_ALPHA_2_VALUE; // coefficient in the inclusion
-//        coef_beta[cell]  = _param->COEF_BETA_2_VALUE;  // coefficient in the inclusion
-//      }
-//    }
-    else // in all other cases, it is the main domain
-    {
-      coef_alpha[cell] = _param->COEF_A_VALUES[0]; // coefficient in the main domain
-      coef_beta[cell]  = _param->COEF_B_VALUES[0]; // coefficient in the main domain
-    }
-  }
+  // fill up the array of coefficients alpha and beta
+  coefficients_initialization(_fmesh.rectangles(), *_param);
 
-  // assemble the matrices and the rhs vector
+  // assemble the matrices
   for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
   {
     const Rectangle rectangle = _fmesh.rectangle(cell);
-    rectangle.local_mass_matrix(coef_alpha[cell], local_mass_mat);
-    rectangle.local_stiffness_matrix(coef_beta[cell], local_stiff_mat);
+    rectangle.local_mass_matrix(_coef_alpha[cell], local_mass_mat);
+    rectangle.local_stiffness_matrix(_coef_beta[cell], local_stiff_mat);
 
     for (int i = 0; i < rectangle.n_dofs(); ++i)
     {
       const int dof_i = rectangle.dof(i);
-      //VecSetValue(_global_rhs, dof_i, local_rhs_vec[i], ADD_VALUES);
       for (int j = 0; j < rectangle.n_dofs(); ++j)
       {
         const int dof_j = rectangle.dof(j);
@@ -239,9 +217,6 @@ void Acoustic2D::solve_rectangles()
       }
     }
   }
-
-  delete[] coef_alpha;
-  delete[] coef_beta;
 
   // free the memory
   for (int i = 0; i < Rectangle::n_dofs_first; ++i)
@@ -269,7 +244,9 @@ void Acoustic2D::solve_rectangles()
 
 
 void Acoustic2D::solve_crank_nicolson(const DoFHandler &dof_handler, const CSRPattern &csr_pattern)
-{ }
+{
+  require(false, "Not implemented");
+}
 
 
 
@@ -291,10 +268,11 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
   const double dt = _param->TIME_STEP;
 
   // fill vectors with solution on the 0-th and 1-st time steps
+  const InitialSolution init_solution;
   for (int d = 0; d < dof_handler.n_dofs(); ++d)
   {
-    VecSetValue(solution_2, d, init_solution(dof_handler.dof(d), _param->TIME_BEG), INSERT_VALUES);
-    VecSetValue(solution_1, d, init_solution(dof_handler.dof(d), _param->TIME_BEG + dt), INSERT_VALUES);
+    VecSetValue(solution_2, d, init_solution.value(dof_handler.dof(d), _param->TIME_BEG), INSERT_VALUES);
+    VecSetValue(solution_1, d, init_solution.value(dof_handler.dof(d), _param->TIME_BEG + dt), INSERT_VALUES);
   }
 
   // make a SLAE rhs vector
@@ -303,8 +281,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
   VecDuplicate(system_rhs, &temp);
 
   // boundary nodes
-  std::vector<int> b_nodes;
-  find_bound_nodes(b_nodes);
+  const std::vector<int> &b_nodes = _fmesh.boundary_vertices();
 
   // system matrix equal to global mass matrix
   Mat system_mat;
@@ -330,6 +307,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
     VecSet(solution, 0.); // zeroing the solution vector
 
     // assemble some parts of system rhs vector
+    const RHSFunction rhs_function(*_param);
     for (int cell = 0; cell < _fmesh.n_triangles(); ++cell)
     {
       Triangle triangle = _fmesh.triangle(cell);
@@ -351,8 +329,9 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
     VecAXPY(system_rhs, 2., temp);
 
     // impose Dirichlet boundary condition
+    const BoundaryFunction boundary_function;
     for (int i = 0; i < b_nodes.size(); ++i)
-      VecSetValue(system_rhs, b_nodes[i], boundary_function(_fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
+      VecSetValue(system_rhs, b_nodes[i], boundary_function.value(_fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
 
     // solve the SLAE
     KSPSolve(ksp, system_rhs, solution);
@@ -414,6 +393,8 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
 
 void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern)
 {
+  require(_param->FE_ORDER == 1, "This fe order is not implemented (" + d2s(_param->FE_ORDER) + ")");
+
   // create vectors
   Vec solution; // numerical solution on the current (n-th) time step
   Vec solution_1; // numerical solution on the previous ((n-1)-th) time step
@@ -425,15 +406,15 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
   VecDuplicate(_global_rhs, &solution_2);
   //VecDuplicate(_global_rhs, &exact_solution);
 
-  require(_param->FE_ORDER == 1, "This fe order is not implemented (" + d2s(_param->FE_ORDER) + ")");
-
+  // for brevity
   const double dt = _param->TIME_STEP;
 
   // fill vectors with solution on the 0-th and 1-st time steps
+  const InitialSolution init_solution;
   for (int d = 0; d < dof_handler.n_dofs(); ++d)
   {
-    VecSetValue(solution_2, d, init_solution(dof_handler.dof(d), _param->TIME_BEG), INSERT_VALUES);
-    VecSetValue(solution_1, d, init_solution(dof_handler.dof(d), _param->TIME_BEG + dt), INSERT_VALUES);
+    VecSetValue(solution_2, d, init_solution.value(dof_handler.dof(d), _param->TIME_BEG), INSERT_VALUES);
+    VecSetValue(solution_1, d, init_solution.value(dof_handler.dof(d), _param->TIME_BEG + dt), INSERT_VALUES);
   }
 
   // make a SLAE rhs vector
@@ -442,8 +423,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
   VecDuplicate(system_rhs, &temp);
 
   // boundary nodes
-  std::vector<int> b_nodes;
-  find_bound_nodes(b_nodes);
+  const std::vector<int> &b_nodes = _fmesh.boundary_vertices();
 
   // system matrix equal to global mass matrix
   Mat system_mat;
@@ -457,7 +437,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
   KSP ksp;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
   KSPSetOperators(ksp, system_mat, system_mat, SAME_PRECONDITIONER);
-  KSPSetTolerances(ksp, 1e-12, 1e-30, 1e+5, 10000);
+  KSPSetTolerances(ksp, 1e-8, 1e-30, 1e+5, 10000);
 
   double *local_rhs_vec = new double[Rectangle::n_dofs_first];
 
@@ -469,6 +449,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     VecSet(solution, 0.); // zeroing the solution vector
 
     // assemble some parts of system rhs vector
+    const RHSFunction rhs_function(*_param);
     for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
     {
       Rectangle rectangle = _fmesh.rectangle(cell);
@@ -490,8 +471,9 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     VecAXPY(system_rhs, 2., temp);
 
     // impose Dirichlet boundary condition
+    const BoundaryFunction boundary_function;
     for (int i = 0; i < b_nodes.size(); ++i)
-      VecSetValue(system_rhs, b_nodes[i], boundary_function(_fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
+      VecSetValue(system_rhs, b_nodes[i], boundary_function.value(_fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
 
     // solve the SLAE
     KSPSolve(ksp, system_rhs, solution);
@@ -552,49 +534,68 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
 
 
-void Acoustic2D::find_bound_nodes(std::vector<int> &b_nodes) const
-{
-  if (_fmesh.n_lines() == 0) // there are no boundary lines in the mesh
-  {
-    // find max and min values to know the limits of computational domain.
-    // this approach works only if you have a rectangular domain
-    double xmin = _fmesh.vertex(0).coord(0);
-    double xmax = _fmesh.vertex(0).coord(0);
-    double ymin = _fmesh.vertex(0).coord(1);
-    double ymax = _fmesh.vertex(0).coord(1);
-    for (int i = 1; i < _fmesh.n_vertices(); ++i)
-    {
-      const double x = _fmesh.vertex(i).coord(0);
-      const double y = _fmesh.vertex(i).coord(1);
-      if (x < xmin) xmin = x;
-      if (x > xmax) xmax = x;
-      if (y < ymin) ymin = y;
-      if (y > ymax) ymax = y;
-    }
+//void Acoustic2D::find_bound_nodes(std::vector<int> &b_nodes) const
+//{
+//  if (_fmesh.n_lines() == 0) // there are no boundary lines in the mesh
+//  {
+//    // find max and min values to know the limits of computational domain.
+//    // this approach works only if you have a rectangular domain
+//    double xmin = _fmesh.vertex(0).coord(0);
+//    double xmax = _fmesh.vertex(0).coord(0);
+//    double ymin = _fmesh.vertex(0).coord(1);
+//    double ymax = _fmesh.vertex(0).coord(1);
+//    for (int i = 1; i < _fmesh.n_vertices(); ++i)
+//    {
+//      const double x = _fmesh.vertex(i).coord(0);
+//      const double y = _fmesh.vertex(i).coord(1);
+//      if (x < xmin) xmin = x;
+//      if (x > xmax) xmax = x;
+//      if (y < ymin) ymin = y;
+//      if (y > ymax) ymax = y;
+//    }
 
-    // find nodes that lie on these limits
-    const double tol = FLOAT_NUMBERS_EQUALITY_TOLERANCE;
-    for (int i = 0; i < _fmesh.n_vertices(); ++i)
-    {
-      const double x = _fmesh.vertex(i).coord(0);
-      const double y = _fmesh.vertex(i).coord(1);
-      if ((fabs(x - xmin) < tol || fabs(x - xmax) < tol ||
-           fabs(y - ymin) < tol || fabs(y - ymax) < tol) &&
-          find(b_nodes.begin(), b_nodes.end(), i) == b_nodes.end())
-        b_nodes.push_back(i);
-    }
-  }
-  else // there are the boundary lines in the mesh
+//    // find nodes that lie on these limits
+//    const double tol = FLOAT_NUMBERS_EQUALITY_TOLERANCE;
+//    for (int i = 0; i < _fmesh.n_vertices(); ++i)
+//    {
+//      const double x = _fmesh.vertex(i).coord(0);
+//      const double y = _fmesh.vertex(i).coord(1);
+//      if ((fabs(x - xmin) < tol || fabs(x - xmax) < tol ||
+//           fabs(y - ymin) < tol || fabs(y - ymax) < tol) &&
+//          find(b_nodes.begin(), b_nodes.end(), i) == b_nodes.end())
+//        b_nodes.push_back(i);
+//    }
+//  }
+//  else // there are the boundary lines in the mesh
+//  {
+//    for (int lin = 0; lin < _fmesh.n_lines(); ++lin)
+//    {
+//      const Line cur_line = _fmesh.line(lin);
+//      for (int ver = 0; ver < Line::n_vertices; ++ver)
+//      {
+//        const int node = cur_line.vertex(ver);
+//        if (find(b_nodes.begin(), b_nodes.end(), node) == b_nodes.end())
+//          b_nodes.push_back(node);
+//      }
+//    }
+//  }
+//}
+
+
+
+
+void Acoustic2D::coefficients_initialization(const std::vector<Rectangle> &cells,
+                                             const Parameters &param)
+{
+  _coef_alpha.resize(cells.size(), param.COEF_A_VALUES[0]); // coefficient in the main domain
+  _coef_beta.resize(cells.size(), param.COEF_B_VALUES[0]);  // coefficient in the main domain
+  for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
   {
-    for (int lin = 0; lin < _fmesh.n_lines(); ++lin)
+    const Rectangle rectangle = _fmesh.rectangle(cell);
+    if (rectangle.material_id() == param.INCL_DOMAIN)
     {
-      const Line cur_line = _fmesh.line(lin);
-      for (int ver = 0; ver < Line::n_vertices; ++ver)
-      {
-        const int node = cur_line.vertex(ver);
-        if (find(b_nodes.begin(), b_nodes.end(), node) == b_nodes.end())
-          b_nodes.push_back(node);
-      }
+      coef_alpha[cell] = param.COEF_A_VALUES[1]; // coefficient in the inclusion
+      coef_beta[cell]  = param.COEF_B_VALUES[1];  // coefficient in the inclusion
     }
   }
 }

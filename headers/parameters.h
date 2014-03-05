@@ -121,6 +121,19 @@ public:
   std::vector<double> COEF_B_VALUES;
 
             /**
+             * Distribution of the layers is described in the file
+             */
+  std::string LAYERS_FILE;
+
+            /**
+             * The layers are distributed in parallel to each other, but probably not horizontally.
+             * This angle (in degrees, not radians) describes the slope of the layers.
+             * The angle is counted between horizontal axis (X) in 2D plan.
+             * That means horizontally distributed layers have angle 0.
+             */
+  double LAYERS_ANGLE;
+
+            /**
              * The path to the directory where the meshes (.msh-files) are
              */
   std::string MESH_DIR;
