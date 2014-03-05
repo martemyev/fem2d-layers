@@ -1,5 +1,5 @@
 #include "config.h"
-#include <fem/parameters.h>
+#include "parameters.h"
 #include "acoustic2d.h"
 #include "testing.h"
 #include <iostream>
@@ -29,8 +29,8 @@ int main(int argc, char **argv)
   std::cout << param.print() << std::endl;
 //#endif
 
-  Acoustic2D problem(&param);
-  problem.solve_rectangles();
+//  Acoustic2D problem(&param);
+//  problem.solve_rectangles();
 
   PetscFinalize();
 

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#define DEBUG
+/* #undef DEBUG */
 #define TESTING
 #define HAVE_64BIT_SIZE_T
 

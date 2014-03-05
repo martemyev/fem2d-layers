@@ -1,7 +1,8 @@
 #include "acoustic2d.h"
-#include "fem/parameters.h"
+#include "parameters.h"
 #include "petscksp.h"
 #include "fem/auxiliary_functions.h"
+#include "fem/finite_element.h"
 #include "analytic_functions.h"
 #include "fem/result.h"
 #include "fem/math_functions.h"
@@ -11,8 +12,7 @@
 
 
 Acoustic2D::Acoustic2D(Parameters *param)
-  : _param(param),
-    _fmesh(param)
+  : _param(param)
 {
   require(_param->FE_ORDER == 1, "This fe order hasn't been implemented");
   require(_param->RES_DIR != "", "Computation environment was not established through Parameter function");
@@ -39,8 +39,10 @@ void Acoustic2D::solve_triangles()
   std::cout << "n_nodes = " << _fmesh.n_vertices() << std::endl;
 #endif
 
+  FiniteElement fe(_param->FE_ORDER);
+
   DoFHandler dof_handler(&_fmesh);
-  dof_handler.distribute_dofs(*_param, CG);
+  dof_handler.distribute_dofs(fe, CG);
 
   // create sparse format based on the distribution of degrees of freedom.
   // since we use first order basis functions, and then
@@ -151,14 +153,18 @@ void Acoustic2D::solve_rectangles()
   require(_param->FE_ORDER == 1, "This fe order is not implemented (" + d2s(_param->FE_ORDER) + ")");
 
   // create rectangular grid according to parameters defined in _param
-  _fmesh.create_rectangular_grid();
+  _fmesh.create_rectangular_grid(_param->X_BEG, _param->X_END,
+                                 _param->Y_BEG, _param->Y_END,
+                                 _param->N_FINE_X, _param->N_FINE_Y);
 
 #if defined(DEBUG)
   std::cout << "n_nodes = " << _fmesh.n_vertices() << std::endl;
 #endif
 
+  FiniteElement fe(_param->FE_ORDER);
+
   DoFHandler dof_handler(&_fmesh);
-  dof_handler.distribute_dofs(*_param, CG);
+  dof_handler.distribute_dofs(fe, CG);
 
   // create sparse format based on the distribution of degrees of freedom.
   // since we use first order basis functions, and then
@@ -327,7 +333,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
     for (int cell = 0; cell < _fmesh.n_triangles(); ++cell)
     {
       Triangle triangle = _fmesh.triangle(cell);
-      triangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, *_param, local_rhs_vec); // rhs function on the previous time step
+      triangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, local_rhs_vec); // rhs function on the previous time step
       for (int i = 0; i < triangle.n_dofs(); ++i)
       {
         const int dof_i = triangle.dof(i);
@@ -365,7 +371,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
 
     if ((_param->PRINT_VTU && (time_step % _param->VTU_STEP == 0)) || (time_step == _param->N_TIME_STEPS))
     {
-      Result res(_param, &dof_handler);
+      Result res(&dof_handler);
       std::string fname = _param->VTU_DIR + "/res-" + d2s(time_step) + ".vtu";
       res.write_vtu(fname, solution); //, exact_solution);
     }
@@ -466,7 +472,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
     {
       Rectangle rectangle = _fmesh.rectangle(cell);
-      rectangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, *_param, local_rhs_vec); // rhs function on the previous time step
+      rectangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, local_rhs_vec); // rhs function on the previous time step
       for (int i = 0; i < rectangle.n_dofs(); ++i)
       {
         const int dof_i = rectangle.dof(i);
@@ -504,9 +510,9 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
     if ((_param->PRINT_VTU && (time_step % _param->VTU_STEP == 0)) || (time_step == _param->N_TIME_STEPS))
     {
-      Result res(_param, &dof_handler);
+      Result res(&dof_handler);
       std::string fname = _param->VTU_DIR + "/res-" + d2s(time_step) + ".vts";
-      res.write_vts(fname, solution); //, exact_solution);
+      res.write_vts(fname, _param->N_FINE_X, _param->N_FINE_Y, solution); //, exact_solution);
     }
 
     if ((_param->SAVE_SOL && (time_step % _param->SOL_STEP == 0)) || (time_step == _param->N_TIME_STEPS))
@@ -567,7 +573,7 @@ void Acoustic2D::find_bound_nodes(std::vector<int> &b_nodes) const
     }
 
     // find nodes that lie on these limits
-    const double tol = FLOAT_NUMBERS_EQUALITY_TOL;
+    const double tol = FLOAT_NUMBERS_EQUALITY_TOLERANCE;
     for (int i = 0; i < _fmesh.n_vertices(); ++i)
     {
       const double x = _fmesh.vertex(i).coord(0);

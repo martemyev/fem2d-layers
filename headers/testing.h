@@ -8,7 +8,7 @@
 #include "auxiliary_testing_functions.h"
 #include "fem/dof_handler.h"
 #include "fem/csr_pattern.h"
-#include "fem/parameters.h"
+#include "parameters.h"
 #include "petscvec.h"
 #include "petscmat.h"
 #include "petscksp.h"
@@ -24,9 +24,10 @@
 // =================================
 TEST(FineMesh, read_without_physical_and_partitions)
 {
-  Parameters default_param;
-  FineMesh fmesh(&default_param);
-  fmesh.read(TEST_DIR + "/test_mesh_0.msh");
+  FineMesh fmesh;
+  fmesh.read(TEST_DIR + "/test_mesh_0.msh",
+             Point(0, 0),
+             Point(1, 1));
 
   Point points[] = { Point(0, 0, 0),
                      Point(1, 0, 0),
@@ -66,14 +67,25 @@ TEST(FineMesh, read_without_physical_and_partitions)
 }
 
 
+
+// =================================
+//
+// =================================
+TEST(FineMesh, create_rectangular_grid)
+{
+}
+
+
+
 // =================================
 //
 // =================================
 TEST(FineMesh, read_with_physical_and_partitions)
 {
-  Parameters default_param;
-  FineMesh fmesh(&default_param);
-  fmesh.read(TEST_DIR + "/test_mesh_1.msh");
+  FineMesh fmesh;
+  fmesh.read(TEST_DIR + "/test_mesh_1.msh",
+             Point(0, 0),
+             Point(1, 1));
 
   // check the number of the mesh vertices
   EXPECT_EQ(fmesh.n_vertices(), 180);
@@ -213,12 +225,10 @@ TEST(FineMesh, read_with_physical_and_partitions)
 // =================================
 TEST(CSRPattern, check_pattern_and_other_stuff)
 {
-  Parameters default_param;
-  default_param.X_END = 4;
-  default_param.Y_END = 4;
-
-  FineMesh fmesh(&default_param);
-  fmesh.read(TEST_DIR + "/test_small_10_4.msh");
+  FineMesh fmesh;
+  fmesh.read(TEST_DIR + "/test_small_10_4.msh",
+             Point(0, 0),
+             Point(4, 4));
 
   const unsigned int n_points = 10;
   Point points[] = { Point(0, 0, 0),
@@ -234,8 +244,10 @@ TEST(CSRPattern, check_pattern_and_other_stuff)
                    };
   compare_points(fmesh, n_points, points);
 
+  FiniteElement fe(1);
+
   DoFHandler dof_handler(&fmesh);
-  dof_handler.distribute_dofs(default_param, CG); // default parameters
+  dof_handler.distribute_dofs(fe, CG); // default parameters
   check_dof_handler(dof_handler, fmesh, 1); // 1 means first order basis functions
 
   CSRPattern csr_pattern;
@@ -265,11 +277,16 @@ TEST(CSRPattern, check_pattern_and_other_stuff)
 // =================================
 TEST(CSRPattern, check_that_pattern_doesnt_fall)
 {
-  Parameters default_params;
-  FineMesh fmesh(&default_params);
-  fmesh.read(TEST_DIR + "/test_mesh_1.msh");
+  FineMesh fmesh;
+  fmesh.read(TEST_DIR + "/test_mesh_1.msh",
+             Point(0, 0),
+             Point(1, 1));
+
+  FiniteElement fe(1);
+
   DoFHandler dof_handler(&fmesh);
-  dof_handler.distribute_dofs(default_params, CG); // default parameters
+  dof_handler.distribute_dofs(fe, CG); // default parameters
+
   CSRPattern csr_pattern;
   EXPECT_NO_THROW(csr_pattern.make_sparse_format(dof_handler, CG)); // make a CSR pattern
 }
@@ -296,49 +313,73 @@ TEST(Acoustic2D, check_fall_without_comp_environment)
 // =================================
 //
 // =================================
+const std::string test_mesh_0_files[] = { "test_mesh_0_05.msh",
+                                          "test_mesh_0_025.msh",
+                                          "test_mesh_0_0125.msh",
+                                          "test_mesh_0_00625.msh",
+                                          "test_mesh_0_003125.msh",
+                                          "test_mesh_0_0015625.msh" };
+const unsigned int N_times_tri_dense = 5; // the last mesh is too big to work with dense matrix
+const unsigned int N_times_tri_sparse = 6;
+
 TEST(EllipticAnalyticSolutionDense, AnalyticFunction_x_plus_y)
 {
-  check_elliptic_solution_dense("test_mesh_0_05.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_dense("test_mesh_0_025.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_dense("test_mesh_0_0125.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_dense("test_mesh_0_00625.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_dense("test_mesh_0_003125.msh", an_solution_1, an_rhs_function_1);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_dense; ++i)
+  {
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_1, an_rhs_function_1, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 TEST(EllipticAnalyticSolutionDense, AnalyticFunction_x_mult_y)
 {
-  check_elliptic_solution_dense("test_mesh_0_05.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_dense("test_mesh_0_025.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_dense("test_mesh_0_0125.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_dense("test_mesh_0_00625.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_dense("test_mesh_0_003125.msh", an_solution_2, an_rhs_function_2);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_dense; ++i)
+  {
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_2, an_rhs_function_2, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 TEST(EllipticAnalyticSolutionDense, AnalyticFunction_xx_plus_yy)
 {
-  check_elliptic_solution_dense("test_mesh_0_05.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_dense("test_mesh_0_025.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_dense("test_mesh_0_0125.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_dense("test_mesh_0_00625.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_dense("test_mesh_0_003125.msh", an_solution_3, an_rhs_function_3);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_dense; ++i)
+  {
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_3, an_rhs_function_3, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 TEST(EllipticAnalyticSolutionDense, AnalyticFunction_sinx_plus_siny)
 {
-  check_elliptic_solution_dense("test_mesh_0_05.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_dense("test_mesh_0_025.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_dense("test_mesh_0_0125.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_dense("test_mesh_0_00625.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_dense("test_mesh_0_003125.msh", an_solution_4, an_rhs_function_4);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_dense; ++i)
+  {
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_4, an_rhs_function_4, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 TEST(EllipticAnalyticSolutionDense, AnalyticFunction_expx)
 {
-  check_elliptic_solution_dense("test_mesh_0_05.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_dense("test_mesh_0_025.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_dense("test_mesh_0_0125.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_dense("test_mesh_0_00625.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_dense("test_mesh_0_003125.msh", an_solution_5, an_rhs_function_5);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_dense; ++i)
+  {
+    check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_5, an_rhs_function_5, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 
@@ -348,50 +389,196 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_expx)
 // =================================
 TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_x_plus_y)
 {
-  check_elliptic_solution_sparse("test_mesh_0_05.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_sparse("test_mesh_0_025.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_sparse("test_mesh_0_0125.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_sparse("test_mesh_0_00625.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_sparse("test_mesh_0_003125.msh", an_solution_1, an_rhs_function_1);
-  check_elliptic_solution_sparse("test_mesh_0_0015625.msh", an_solution_1, an_rhs_function_1);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_sparse; ++i)
+  {
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_1, an_rhs_function_1, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_x_mult_y)
 {
-  check_elliptic_solution_sparse("test_mesh_0_05.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_sparse("test_mesh_0_025.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_sparse("test_mesh_0_0125.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_sparse("test_mesh_0_00625.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_sparse("test_mesh_0_003125.msh", an_solution_2, an_rhs_function_2);
-  check_elliptic_solution_sparse("test_mesh_0_0015625.msh", an_solution_2, an_rhs_function_2);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_sparse; ++i)
+  {
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_2, an_rhs_function_2, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_xx_plus_yy)
 {
-  check_elliptic_solution_sparse("test_mesh_0_05.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_sparse("test_mesh_0_025.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_sparse("test_mesh_0_0125.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_sparse("test_mesh_0_00625.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_sparse("test_mesh_0_003125.msh", an_solution_3, an_rhs_function_3);
-  check_elliptic_solution_sparse("test_mesh_0_0015625.msh", an_solution_3, an_rhs_function_3);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_sparse; ++i)
+  {
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_3, an_rhs_function_3, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_sinx_plus_siny)
 {
-  check_elliptic_solution_sparse("test_mesh_0_05.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_sparse("test_mesh_0_025.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_sparse("test_mesh_0_0125.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_sparse("test_mesh_0_00625.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_sparse("test_mesh_0_003125.msh", an_solution_4, an_rhs_function_4);
-  check_elliptic_solution_sparse("test_mesh_0_0015625.msh", an_solution_4, an_rhs_function_4);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_sparse; ++i)
+  {
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_4, an_rhs_function_4, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
 
 TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_expx)
 {
-  check_elliptic_solution_sparse("test_mesh_0_05.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_sparse("test_mesh_0_025.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_sparse("test_mesh_0_0125.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_sparse("test_mesh_0_00625.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_sparse("test_mesh_0_003125.msh", an_solution_5, an_rhs_function_5);
-  check_elliptic_solution_sparse("test_mesh_0_0015625.msh", an_solution_5, an_rhs_function_5);
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_tri_sparse; ++i)
+  {
+    check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_5, an_rhs_function_5, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
 }
+
+
+
+
+// =================================
+//
+// =================================
+const unsigned int N_times_rec_dense = 4; // the last mesh is too big to work with dense matrix
+const unsigned int N_times_rec_sparse = 5;
+const unsigned int n_beg = 4; // start number of cells in x- and y-directions
+
+TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_x_plus_y)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_dense; ++i)
+  {
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_1, an_rhs_function_1, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_x_mult_y)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_dense; ++i)
+  {
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_2, an_rhs_function_2, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_xx_plus_yy)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_dense; ++i)
+  {
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_3, an_rhs_function_3, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_sinx_plus_siny)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_dense; ++i)
+  {
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_4, an_rhs_function_4, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_expx)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_dense; ++i)
+  {
+    check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_5, an_rhs_function_5, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+
+
+// =================================
+//
+// =================================
+TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_x_plus_y)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_sparse; ++i)
+  {
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_1, an_rhs_function_1, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_x_mult_y)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_sparse; ++i)
+  {
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_2, an_rhs_function_2, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_xx_plus_yy)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_sparse; ++i)
+  {
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_3, an_rhs_function_3, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_sinx_plus_siny)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_sparse; ++i)
+  {
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_4, an_rhs_function_4, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
+TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_expx)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+  for (int i = 0; i < N_times_rec_sparse; ++i)
+  {
+    check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_5, an_rhs_function_5, cur_error, cur_n_cells, prev_error, prev_n_cells);
+    prev_error = cur_error;
+    prev_n_cells = cur_n_cells;
+  }
+}
+
