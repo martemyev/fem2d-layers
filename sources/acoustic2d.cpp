@@ -584,11 +584,75 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
 
 
-void Acoustic2D::coefficients_initialization(const std::vector<Rectangle> &cells,
-                                             const Parameters &param)
+void Acoustic2D::coefficients_initialization()
 {
-  _coef_alpha.resize(cells.size(), param.COEF_A_VALUES[0]); // coefficient in the main domain
-  _coef_beta.resize(cells.size(), param.COEF_B_VALUES[0]);  // coefficient in the main domain
+  std::ifstream in(_param->LAYERS_FILE);
+  require(in, "File " + _param->LAYERS_FILE + " cannot be opened");
+
+  unsigned int n_layers; // the number of layers
+  in >> n_layers;
+  require(n_layers > 0, "The number of layers is 0");
+
+  std::vector<double> h_layers(n_layers); // the thicknesses of the layers in percents
+  std::vector<double> coef_alpha(n_layers); // the coefficients alpha in each layer
+  std::vector<double> coef_beta(n_layers); // the coefficients beta in each layer
+
+  const std::vector<Rectangle> &cells = _fmesh.rectangles(); // all mesh cells
+
+  if (n_layers == 1) // if there is only 1 layer that means that the domain is homogeneous
+  {
+    in >> h_layers[0] >> coef_alpha[0] >> coef_beta[0]; // thickness of the layer doesn't matter, since there is only one layer for the whole domain
+    _coef_alpha.resize(cells.size(), coef_alpha[0]); // coefficient alpha in each cell
+    _coef_beta.resize(cells.size(),  coef_beta[0]);  // coefficient beta in each cell
+    return;
+  }
+
+  // there are several (or even many) layers
+  _coef_alpha.resize(cells.size(), 0); // coefficient alpha in each cell is 0 by default
+  _coef_beta.resize(cells.size(),  0); // coefficient beta in each cell is 0 by default
+
+  // since the layers are distributed horisontally (or nearly horisontally) in most cases
+  // the thickness of the layer is associated with the vertical axis
+  // and expressed in percents according to the height (depth) of the domain
+  const double Hy = _fmesh.max_coord().coord(1) - _fmesh.min_coord().coord(1);
+  // but we also need the length of the domain in x-direction
+  const double Hx = _fmesh.max_coord().coord(0) - _fmesh.min_coord().coord(0);
+
+  for (int i = 0; i < n_layers; ++i)
+  {
+    in >> h_layers[i] >> coef_alpha[i] >> coef_beta[i];
+    //h_layers[i] *= 0.01 * Hy; // now h_layers are in real length
+  }
+
+  std::vector<Layer> layers(n_layers);
+
+  // angle should be in (-90, 90) degrees
+  const double angle_rad = _param->LAYERS_ANGLE * 180. / pi; // angle in radians
+
+  double y_cur, y_pre = _fmesh.min_coord().coord(1);
+  for (int i = 0; i < n_layers; ++i)
+  {
+    // calculate 3 or 4 points describing a layer
+    x_cur = _fmesh.min_coord().coord(0);
+    x_opp = _fmesh.max_coord().coord(0);
+    y_cur = y_pre + h_layers[i] * 0.01 * Hy;
+
+    // the change of the thickness on the opposite side of the domain.
+    // this length can be positive or negative (if angle in (-90, 0))
+    const double hy = Hx * tan(angle_rad);
+
+    // if angle is negative, hy is also negative.
+    // in this case (y_cur + hy) means (y_cur - |hy|) and can lead to the value
+    // less than the lowest y-coordinate of the domain
+    y_opp = max(y_cur + hy, _fmesh.min_coord().coord(1));
+
+    // in this case we also can change x-coordinate of the opposite point
+    if (hy < 0)
+      x_opp = y_cur * cotan(angle_rad);
+
+  }
+
+
   for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
   {
     const Rectangle rectangle = _fmesh.rectangle(cell);
