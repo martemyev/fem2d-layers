@@ -27,7 +27,8 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
 {
   const double right_angle = 90.; // right angle in degrees
   require(fabs(angle) < right_angle, "Angle doesn't belong to correct range: (-90, 90), its value : " + d2s(angle));
-  require(fabs(fabs(angle) - right_angle) > FLOAT_NUMBERS_EQUALITY_TOLERANCE, "Angle is equal to right angle (90), what is prohibited");
+  require(fabs(fabs(angle) - right_angle) > FLOAT_NUMBERS_EQUALITY_TOLERANCE,
+          "Angle is equal to right angle (90), what is prohibited");
 
   _number = number;
   _thickness_percent = thickness_percent[number];
@@ -57,15 +58,17 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
     y_prev = y_cur;
     y_cur = (i == n_layers - 1 ? _max_point.coord(1) : y_prev + 0.01*thickness_percent[i]*Hy);
   }
-  _y_prev = y_prev;
-  _y_cur  = y_cur;
+  //_y_prev = y_prev;
+  //_y_cur  = y_cur;
 
   if (fabs(_angle) < FLOAT_NUMBERS_EQUALITY_TOLERANCE) // if angle is zero, there is no stretching, and transformation is not required
   {
     _Y[0] = _Y[1] = y_prev;
     _Y[2] = _Y[3] = y_cur;
-    for (int i = 0; i < n_vertices; ++i)
-      _transform_y[i] = 1.;
+
+   // _x_pos_left = _x_pos_right = 0.; // they don't matter in this case
+    //for (int i = 0; i < n_vertices; ++i)
+    //  _transform_y[i] = 1.;
   }
   else // there is an angle
   {
@@ -78,22 +81,25 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
       double x_prev = (Hx/Hy) * (-y_prev + y0) + x1;
       double x_cur  = (Hx/Hy) * (-y_cur  + y0) + x1;
 
-      double temp = (x_prev - x0) * tan(_angle_rad_abs);
-      _Y[0] = y_prev - (x_prev - x0) * tan(_angle_rad_abs);
+      const double tg = tan(_angle_rad_abs);
+      _Y[0] = y_prev - (x_prev - x0) * tg;
+      _Y[1] = y_prev + (x1 - x_prev) * tg;
+      _Y[2] = y_cur - (x_cur - x0) * tg;
+      _Y[3] = y_cur + (x1 - x_cur) * tg;
 
-      temp = (x1 - x_prev) * tan(_angle_rad_abs);
-      _Y[1] = y_prev + (x1 - x_prev) * tan(_angle_rad_abs);
+      //_transform_y[0] = (fabs(y_prev - _Y[0]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_prev / _Y[0]);
+      //_transform_y[1] = (fabs(y_prev - _Y[1]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_prev / _Y[1]);
+      //_transform_y[2] = (fabs(y_cur  - _Y[2]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_cur  / _Y[2]);
+      //_transform_y[3] = (fabs(y_cur  - _Y[3]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_cur  / _Y[3]);
 
-      temp = (x_cur - x0) * tan(_angle_rad_abs);
-      _Y[2] = y_cur - (x_cur - x0) * tan(_angle_rad_abs);
+      //_x_pos_left = x_cur;
+      //_x_pos_right = x_prev;
 
-      temp = (x1 - x_cur) * tan(_angle_rad_abs);
-      _Y[3] = y_cur + (x1 - x_cur) * tan(_angle_rad_abs);
+      _ab = (_Y[1] - _Y[0]) / Hx;
+      _at = (_Y[3] - _Y[2]) / Hx;
+      _bb = _Y[0] - _ab * _X[0];
+      _bt = _Y[2] - _at * _X[2];
 
-      _transform_y[0] = (fabs(y_prev - _Y[0]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_prev / _Y[0]);
-      _transform_y[1] = (fabs(y_prev - _Y[1]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_prev / _Y[1]);
-      _transform_y[2] = (fabs(y_cur  - _Y[2]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_cur  / _Y[2]);
-      _transform_y[3] = (fabs(y_cur  - _Y[3]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_cur  / _Y[3]);
     }
     else // if the angle is negative
     {
@@ -154,20 +160,56 @@ bool Layer::contains_element(const Rectangle &cell, const std::vector<Point> &po
   // we think that a cell belongs to a layer if a center of the cell belongs to the layer
   double xc = 0., yc = 0.; // center of the cell
 
+  //const double tg = tan(_angle_rad_abs); // precomputed tangent
+
+  //double x[n_vertices], y[n_vertices];
+  //double ynew[n_vertices];
+
   for (int i = 0; i < cell.n_vertices; ++i)
   {
-    xc += points[cell.vertex(i)].coord(0);
-    yc += _transform_y[i] * points[cell.vertex(i)].coord(1);
+    const double x = points[cell.vertex(i)].coord(0); // coordinates of the vertex
+    const double y = points[cell.vertex(i)].coord(1);
+
+    xc += x;
+    yc += y;
   }
+
+//  x[0] = x[2] = 0;
+//  x[1] = x[3] = 1;
+//  y[0] = 0;
+//  y[1] = 1;
+//  y[2] = 1;
+//  y[3] = 2;
+
+
+//  ynew[0] = y[0] - x[0]*tg;//(_x_pos_right - x[0]) * tg;
+//  ynew[1] = y[1] - x[1]*tg;//(_x_pos_right - x[1]) * tg;
+//  ynew[2] = y[2] - x[2]*tg;//(_x_pos_left  - x[2]) * tg;
+//  ynew[3] = y[3] - x[3]*tg;//(_x_pos_left  - x[3]) * tg;
+
+//  for (int i = 0; i < cell.n_vertices; ++i)
+//  {
+//    xc += x[i];
+//    yc += ynew[i];
+//  }
   xc /= cell.n_vertices;
   yc /= cell.n_vertices;
 
-  expect(xc > _min_point.coord(0), "X-center of the cell is less than left limit. That's wrong");
-  expect(xc < _max_point.coord(0), "X-center of the cell is more than right limit. That's wrong");
+//  expect(xc > _min_point.coord(0), "X-center of the cell is less than left limit. That's wrong");
+//  expect(xc < _max_point.coord(0), "X-center of the cell is more than right limit. That's wrong");
+//  expect(yc > _min_point.coord(1), "Y-center of the cell is less than bottom limit. That's wrong");
+//  expect(yc < _max_point.coord(1), "Y-center of the cell is more than top limit. That's wrong");
 
-  if (yc >= _y_prev &&
-      yc <= _y_cur)
-    return true; // the layer contains this cell
+//  if (yc >= _y_prev &&
+//      yc <= _y_cur)
+//    return true; // the layer contains this cell
+
+
+  const double yb = _ab * xc + _bb;
+  const double yt = _at * xc + _bt;
+
+  if (yc >= yb && yc <= yt)
+    return true;
 
   return false; // the layer doesn't contain this cell
 }

@@ -32,14 +32,19 @@ public:
 
 private:
   unsigned int _number;
-  double _thickness;
+  //double _thickness;
   double _thickness_percent;
   double _angle;
   double _angle_rad_abs;
   Point _min_point;
   Point _max_point;
 
-  double _y_prev, _y_cur;
+  double _ab, _at;
+  double _bb, _bt;
+
+  //double _x_pos_right, _x_pos_left; // some valuable xs
+
+  //double _y_prev, _y_cur;
 
             /**
              * Transformation matrix for y-coordinates of the points.
@@ -48,7 +53,8 @@ private:
              * and therefore the x-coordinates for the stretched rectangle (parallelogram = layer)
              * stay the same as for the straight rectangle
              */
-  double _transform_y[n_vertices];
+  //double _transform_y[n_vertices];
+
 
             /**
              * The beginning point of the layer.
@@ -56,7 +62,7 @@ private:
              * but also on the angle, because in case of positive or negative angle
              * the x-coordinate of the beginning point will be different
              */
-  Point _beg_point;
+  //Point _beg_point;
 
   //void calc_transformation();
 };
