@@ -9,5 +9,6 @@
 
 const std::string TEST_DIR = "@TEST_DIR@";
 const std::string RESULTS_DIR  = "@RESULTS_DIR@";
+const std::string PROJECT_DIR = "@CMAKE_SOURCE_DIR@";
 
 #endif // CONFIG_H

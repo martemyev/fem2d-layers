@@ -124,14 +124,15 @@ public:
              * Distribution of the layers is described in the file
              */
   std::string LAYERS_FILE;
+  std::string LAYERS_DIR;
 
-            /**
-             * The layers are distributed in parallel to each other, but probably not horizontally.
-             * This angle (in degrees, not radians) describes the slope of the layers.
-             * The angle is counted between horizontal axis (X) in 2D plan.
-             * That means horizontally distributed layers have angle 0.
-             */
-  double LAYERS_ANGLE;
+//            /**
+//             * The layers are distributed in parallel to each other, but probably not horizontally.
+//             * This angle (in degrees, not radians) describes the slope of the layers.
+//             * The angle is counted between horizontal axis (X) in 2D plan.
+//             * That means horizontally distributed layers have angle 0.
+//             */
+//  double LAYERS_ANGLE;
 
             /**
              * The path to the directory where the meshes (.msh-files) are
@@ -280,14 +281,6 @@ private: //======================= PRIVATE =========================
              */
   void check_clean_dirs() const;
 };
-
-
-
-/**
- * Get the stem of the file name with probably long path
- * @param filename - the name of the file which stem we would like to get
- */
-std::string stem(const std::string &filename);
 
 
 #endif // PARAMETERS_H

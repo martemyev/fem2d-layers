@@ -6,6 +6,7 @@
 #include "analytic_functions.h"
 #include "fem/result.h"
 #include "fem/math_functions.h"
+#include "layer.h"
 #include <iostream>
 #include <algorithm>
 #include <fstream>
@@ -197,7 +198,7 @@ void Acoustic2D::solve_rectangles()
   }
 
   // fill up the array of coefficients alpha and beta
-  coefficients_initialization(_fmesh.rectangles(), *_param);
+  coefficients_initialization();
 
   // assemble the matrices
   for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
@@ -441,7 +442,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
   double *local_rhs_vec = new double[Rectangle::n_dofs_first];
 
-  require(_param->N_TIME_STEPS > 2, "There is no time steps to perform: n_time_steps = " + d2s(_param->N_TIME_STEPS));
+  require(_param->N_TIME_STEPS > 1, "There is no time steps to perform: n_time_steps = " + d2s(_param->N_TIME_STEPS));
   for (int time_step = 2; time_step <= _param->N_TIME_STEPS; ++time_step)
   {
     const double time = _param->TIME_BEG + time_step * dt; // current time
@@ -494,7 +495,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     {
       Result res(&dof_handler);
       std::string fname = _param->VTU_DIR + "/res-" + d2s(time_step) + ".vts";
-      res.write_vts(fname, _param->N_FINE_X, _param->N_FINE_Y, solution); //, exact_solution);
+      res.write_vts(fname, _param->N_FINE_X, _param->N_FINE_Y, _coef_alpha, _coef_beta, solution); //, exact_solution);
     }
 
     if ((_param->SAVE_SOL && (time_step % _param->SOL_STEP == 0)) || (time_step == _param->N_TIME_STEPS))
@@ -590,20 +591,26 @@ void Acoustic2D::coefficients_initialization()
   require(in, "File " + _param->LAYERS_FILE + " cannot be opened");
 
   unsigned int n_layers; // the number of layers
-  in >> n_layers;
+  double layer_angle; // slope angle of the layers
+  in >> n_layers >> layer_angle;
+
+  const double right_angle = 90.; // right angle in degrees
+  require(fabs(layer_angle) < right_angle, "Angle doesn't belong to correct range: (-90, 90), its value : " + d2s(layer_angle));
+  require(fabs(fabs(layer_angle) - right_angle) > FLOAT_NUMBERS_EQUALITY_TOLERANCE, "Angle is equal to right angle (90), what is prohibited");
+
   require(n_layers > 0, "The number of layers is 0");
 
-  std::vector<double> h_layers(n_layers); // the thicknesses of the layers in percents
-  std::vector<double> coef_alpha(n_layers); // the coefficients alpha in each layer
-  std::vector<double> coef_beta(n_layers); // the coefficients beta in each layer
+  std::vector<double> layer_h_percent(n_layers); // the thicknesses of the layers in percents
+  std::vector<double> layer_coef_alpha(n_layers); // the coefficients alpha in each layer
+  std::vector<double> layer_coef_beta(n_layers); // the coefficients beta in each layer
 
   const std::vector<Rectangle> &cells = _fmesh.rectangles(); // all mesh cells
 
   if (n_layers == 1) // if there is only 1 layer that means that the domain is homogeneous
   {
-    in >> h_layers[0] >> coef_alpha[0] >> coef_beta[0]; // thickness of the layer doesn't matter, since there is only one layer for the whole domain
-    _coef_alpha.resize(cells.size(), coef_alpha[0]); // coefficient alpha in each cell
-    _coef_beta.resize(cells.size(),  coef_beta[0]);  // coefficient beta in each cell
+    in >> layer_h_percent[0] >> layer_coef_alpha[0] >> layer_coef_beta[0]; // thickness of the layer doesn't matter, since there is only one layer for the whole domain
+    _coef_alpha.resize(cells.size(), layer_coef_alpha[0]); // coefficient alpha in each cell
+    _coef_beta.resize(cells.size(),  layer_coef_beta[0]);  // coefficient beta in each cell
     return;
   }
 
@@ -615,51 +622,36 @@ void Acoustic2D::coefficients_initialization()
   // the thickness of the layer is associated with the vertical axis
   // and expressed in percents according to the height (depth) of the domain
   const double Hy = _fmesh.max_coord().coord(1) - _fmesh.min_coord().coord(1);
-  // but we also need the length of the domain in x-direction
-  const double Hx = _fmesh.max_coord().coord(0) - _fmesh.min_coord().coord(0);
+//  // but we also need the length of the domain in x-direction
+//  const double Hx = _fmesh.max_coord().coord(0) - _fmesh.min_coord().coord(0);
 
+  double total_h_percent = 0.; // in the end of the day total_h should be 100 (because it's in percent). in other case those thicknesses don't make sense
   for (int i = 0; i < n_layers; ++i)
   {
-    in >> h_layers[i] >> coef_alpha[i] >> coef_beta[i];
-    //h_layers[i] *= 0.01 * Hy; // now h_layers are in real length
+    in >> layer_h_percent[i] >> layer_coef_alpha[i] >> layer_coef_beta[i];
+    total_h_percent += layer_h_percent[i];
   }
+  require(fabs(total_h_percent - 100.) < FLOAT_NUMBERS_EQUALITY_TOLERANCE, "The total thickness of all layers is not 100%. But it should be.");
 
+  // allocate memory for all layers
   std::vector<Layer> layers(n_layers);
 
-  // angle should be in (-90, 90) degrees
-  const double angle_rad = _param->LAYERS_ANGLE * 180. / pi; // angle in radians
-
-  double y_cur, y_pre = _fmesh.min_coord().coord(1);
+  // initialize the layers according to the domain, their thicknesses and angle
   for (int i = 0; i < n_layers; ++i)
+    layers[i].init(i, layer_h_percent, _fmesh.min_coord(), _fmesh.max_coord(), layer_angle);
+
+  // distribute the coefficients in each cell according to the layers
+  for (int i = 0; i < cells.size(); ++i)
   {
-    // calculate 3 or 4 points describing a layer
-    x_cur = _fmesh.min_coord().coord(0);
-    x_opp = _fmesh.max_coord().coord(0);
-    y_cur = y_pre + h_layers[i] * 0.01 * Hy;
-
-    // the change of the thickness on the opposite side of the domain.
-    // this length can be positive or negative (if angle in (-90, 0))
-    const double hy = Hx * tan(angle_rad);
-
-    // if angle is negative, hy is also negative.
-    // in this case (y_cur + hy) means (y_cur - |hy|) and can lead to the value
-    // less than the lowest y-coordinate of the domain
-    y_opp = max(y_cur + hy, _fmesh.min_coord().coord(1));
-
-    // in this case we also can change x-coordinate of the opposite point
-    if (hy < 0)
-      x_opp = y_cur * cotan(angle_rad);
-
-  }
-
-
-  for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
-  {
-    const Rectangle rectangle = _fmesh.rectangle(cell);
-    if (rectangle.material_id() == param.INCL_DOMAIN)
+    bool coef_found = false;
+    for (int j = 0; j < n_layers && coef_found == false; ++j)
     {
-      coef_alpha[cell] = param.COEF_A_VALUES[1]; // coefficient in the inclusion
-      coef_beta[cell]  = param.COEF_B_VALUES[1];  // coefficient in the inclusion
+      if (layers[j].contains_element(cells[i], _fmesh.vertices()))
+      {
+        _coef_alpha[i] = layer_coef_alpha[j];
+        _coef_beta[i]  = layer_coef_beta[j];
+        coef_found = true;
+      }
     }
   }
 }

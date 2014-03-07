@@ -22,6 +22,8 @@ void Parameters::default_parameters()
 {
   MESH_DIR = HOME_DIRECTORY + "/projects/tat_gmsfem/brandnew/meshes/";
   GEO_DIR  = HOME_DIRECTORY + "/projects/tat_gmsfem/brandnew/geometries/";
+  LAYERS_DIR = PROJECT_DIR + "/layers/";
+  LAYERS_FILE = "lay_1_0.dat";
 
   RES_TOP_DIR = "../results/"; // this top level directory containing all results usually exists on the same level as 'build', 'sources', 'headers' directories
   RES_DIR = ""; // should be changed and based on some parameters
@@ -71,6 +73,8 @@ void Parameters::read_from_command_line(int argc, char **argv)
     ("help", "produce help message")
     ("meshfile", po::value<std::string>(),  std::string("name of mesh file (" + MESH_FILE + ")").c_str())
     ("meshdir",  po::value<std::string>(),  std::string("path to a directory with meshes (" + MESH_DIR + ")").c_str())
+    ("ladir",    po::value<std::string>(),  std::string("path to a directory with layers files (" + LAYERS_DIR + ")").c_str())
+    ("lafile",   po::value<std::string>(),  std::string("name of file with parameters of layers (" + LAYERS_FILE + ")").c_str())
     ("scheme",   po::value<std::string>(),  std::string("time scheme (" + time_scheme + ")").c_str())
     ("tend",     po::value<double>(),       std::string("time ending (" + d2s(TIME_END) + ")").c_str())
     ("tstep",    po::value<double>(),       std::string("time step (" + d2s(TIME_STEP) + ")").c_str())
@@ -117,6 +121,12 @@ void Parameters::read_from_command_line(int argc, char **argv)
 
   if (vm.count("meshdir"))
     MESH_DIR = vm["meshdir"].as<std::string>();
+
+  if (vm.count("ladir"))
+    LAYERS_DIR = vm["ladir"].as<std::string>();
+
+  if (vm.count("lafile"))
+    LAYERS_FILE = vm["lafile"].as<std::string>();
 
   if (vm.count("scheme"))
   {
@@ -221,10 +231,6 @@ void Parameters::read_from_command_line(int argc, char **argv)
   for (int i = 0; i < N_SUBDOMAINS; ++i)
     require(COEF_A_VALUES[i] > 0 && COEF_B_VALUES[i] > 0, "Coefficients must be positive");
 
-  if (vm.count("hl"))
-    H_LAYER = vm["hl"].as<double>();
-  require(H_LAYER > 0, "H_LAYER must be positive");
-
 //  for (int i = 1; i <= N_SUBDOMAINS; ++i)
 //  {
 //    std::string param_name_afile = "a" + d2s(i) + "file";
@@ -298,7 +304,7 @@ std::string Parameters::print() const
   str += "ycen = " + d2s(SOURCE_CENTER_Y) + "\n";
   str += "n_fine_x = " + d2s(N_FINE_X) + "\n";
   str += "n_fine_y = " + d2s(N_FINE_Y) + "\n";
-  str += "h_layer = " + d2s(H_LAYER) + "\n";
+  str += "layers_file = " + LAYERS_FILE + "\n";
 
   str += "number of subdomains = " + d2s(N_SUBDOMAINS) + "\n";
 
@@ -327,6 +333,7 @@ void Parameters::establish_environment()
 void Parameters::generate_paths()
 {
   MESH_FILE = MESH_DIR + "/" + MESH_FILE; // full path to the mesh file
+  LAYERS_FILE = LAYERS_DIR + "/" + LAYERS_FILE; // full path to the layers file
 
   std::string coef_a = "", coef_b = "";
   for (int i = 0; i < N_SUBDOMAINS; ++i)
@@ -336,12 +343,12 @@ void Parameters::generate_paths()
   }
 
   RES_DIR = RES_TOP_DIR + "/" + stem(MESH_FILE) +
+            "_" + stem(LAYERS_FILE) +
             "_x" + d2s(X_END) + "_y" + d2s(Y_END) +
             "_nx" + d2s(N_FINE_X) + "_ny" + d2s(N_FINE_Y) +
             "_T" + d2s(TIME_END) + "_K" + d2s(N_TIME_STEPS) +
             "_f" + d2s(SOURCE_FREQUENCY) + "_P" + d2s(SOURCE_SUPPORT) +
             "_xc" + d2s(SOURCE_CENTER_X) + "_yc" + d2s(SOURCE_CENTER_Y) +
-            "_hl" + d2s(H_LAYER) +
             "_A" + coef_a + "_B" + coef_b + "/";
 
   VTU_DIR = RES_DIR + "/" + VTU_DIR;
@@ -371,13 +378,4 @@ void Parameters::check_clean_dirs() const
 
   if (SAVE_SOL)
     create_directory(SOL_DIR);
-}
-
-
-
-std::string stem(const std::string &filename)
-{
-  using namespace boost::filesystem;
-  path filename_path(filename);
-  return filename_path.stem().string();
 }

@@ -1,0 +1,173 @@
+#include "layer.h"
+#include "fem/rectangle.h"
+#include "fem/math_functions.h"
+#include "fem/auxiliary_functions.h"
+
+
+Layer::Layer() { }
+
+Layer::Layer(const Layer &layer)
+  : Quadrangle(layer),
+    _number(layer._number)
+{ }
+
+Layer& Layer::operator =(const Layer &layer)
+{
+  Quadrangle::operator =(layer);
+  _number = layer._number;
+}
+
+Layer::~Layer() { }
+
+
+
+void Layer::init(unsigned int number, const std::vector<double> &thickness_percent,
+                 const Point &min_point, const Point &max_point,
+                 double angle)
+{
+  const double right_angle = 90.; // right angle in degrees
+  require(fabs(angle) < right_angle, "Angle doesn't belong to correct range: (-90, 90), its value : " + d2s(angle));
+  require(fabs(fabs(angle) - right_angle) > FLOAT_NUMBERS_EQUALITY_TOLERANCE, "Angle is equal to right angle (90), what is prohibited");
+
+  _number = number;
+  _thickness_percent = thickness_percent[number];
+  _min_point = min_point;
+  _max_point = max_point;
+
+  _angle = angle; // the angle between horizontal (OX) axis
+  _angle_rad_abs = fabs(_angle * PI / 180.); // abs angle in radians
+
+  // the numberation of vertices is the same as in case of rectangle
+  // 2 --- 3
+  // |     |
+  // 0 --- 1
+  // and since the layers are distributed (nearly) horizontally
+  // the x-components of the (0-th and 2-nd) and (1-st and 3-rd) points coincide
+  // and they coincide to x-limits of the domain
+  _X[0] = _X[2] = _min_point.coord(0);
+  _X[1] = _X[3] = _max_point.coord(0);
+
+  // define y-coordinates of the layer vertices
+  const double Hy = _max_point.coord(1) - _min_point.coord(1); // the length (y-direction) of the domain
+  const double Hx = _max_point.coord(0) - _min_point.coord(0); // the length (x-direction) of the domain
+  const unsigned int n_layers = thickness_percent.size(); // the total amount of layers
+  double y_prev, y_cur = _min_point.coord(1);
+  for (int i = 0; i < _number + 1; ++i)
+  {
+    y_prev = y_cur;
+    y_cur = (i == n_layers - 1 ? _max_point.coord(1) : y_prev + 0.01*thickness_percent[i]*Hy);
+  }
+  _y_prev = y_prev;
+  _y_cur  = y_cur;
+
+  if (fabs(_angle) < FLOAT_NUMBERS_EQUALITY_TOLERANCE) // if angle is zero, there is no stretching, and transformation is not required
+  {
+    _Y[0] = _Y[1] = y_prev;
+    _Y[2] = _Y[3] = y_cur;
+    for (int i = 0; i < n_vertices; ++i)
+      _transform_y[i] = 1.;
+  }
+  else // there is an angle
+  {
+    const double x0 = _min_point.coord(0);
+    const double x1 = _max_point.coord(0);
+    const double y0 = _min_point.coord(1);
+
+    if (_angle > 0) // if the angle is positive
+    {
+      double x_prev = (Hx/Hy) * (-y_prev + y0) + x1;
+      double x_cur  = (Hx/Hy) * (-y_cur  + y0) + x1;
+
+      double temp = (x_prev - x0) * tan(_angle_rad_abs);
+      _Y[0] = y_prev - (x_prev - x0) * tan(_angle_rad_abs);
+
+      temp = (x1 - x_prev) * tan(_angle_rad_abs);
+      _Y[1] = y_prev + (x1 - x_prev) * tan(_angle_rad_abs);
+
+      temp = (x_cur - x0) * tan(_angle_rad_abs);
+      _Y[2] = y_cur - (x_cur - x0) * tan(_angle_rad_abs);
+
+      temp = (x1 - x_cur) * tan(_angle_rad_abs);
+      _Y[3] = y_cur + (x1 - x_cur) * tan(_angle_rad_abs);
+
+      _transform_y[0] = (fabs(y_prev - _Y[0]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_prev / _Y[0]);
+      _transform_y[1] = (fabs(y_prev - _Y[1]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_prev / _Y[1]);
+      _transform_y[2] = (fabs(y_cur  - _Y[2]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_cur  / _Y[2]);
+      _transform_y[3] = (fabs(y_cur  - _Y[3]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_cur  / _Y[3]);
+    }
+    else // if the angle is negative
+    {
+      require(false, "Not implemented");
+    }
+
+    //calc_transformation();
+  }
+
+
+//  double prev_layers_thickness = 0.; // total thickness of all previous layers
+//  for (int i = 0; i < _number; ++i)
+//    prev_layers_thickness += thicknesses[i];
+//  const double beg_point_y = _min_point.coord(1) + prev_layers_thickness;
+//  double beg_point_x = _min_point.coord(0); // in case of negative or 0 angle
+//  if (_angle > 0)
+//    beg_point_x = _max_point.coord(0); // in case of positive angle
+
+//  _beg_point = Point(beg_point_x, beg_point_y); // beginning point
+
+}
+
+
+
+//void Layer::calc_transformation()
+//{
+//  // the length of the domain. the layer is supposed to lye over the whole
+//  // (but in case of non-zero angle for some layers it is not true)
+//  const double Hx = _max_point.coord(0) - _min_point.coord(0);
+
+//  // the stretching in y-direction leads to this extra length in respect to normal height (depth)
+//  const double dy = Hx * tan(fabs(_angle_rad));
+
+
+//  // if dy is not zero, then angle is not zero, and there is a stretching, so we need a transformation
+
+//  // the transformation matrix is different when the angle is either positive or negative
+//  if (_angle > 0)
+//  {
+//    _transform_y[0] = _beg_point.coord(1) / (_beg_point.coord(1) - dy);
+//    _transform_y[1] = 1.;
+//    _transform_y[2] = 1.;
+//    _transform_y[3] = (_beg_point.coord(1) + _thickness) / (_beg_point.coord(1) + _thickness + dy);
+//  }
+//  else // if angle is negative or 0
+//  {
+//    _transform_y[0] = 1.;
+//    _transform_y[1] = _beg_point.coord(1) / (_beg_point.coord(1) - dy);
+//    _transform_y[2] = (_beg_point.coord(1) + _thickness) / (_beg_point.coord(1) + _thickness + dy);
+//    _transform_y[3] = 1.;
+//  }
+//}
+
+
+
+bool Layer::contains_element(const Rectangle &cell, const std::vector<Point> &points) const
+{
+  // we think that a cell belongs to a layer if a center of the cell belongs to the layer
+  double xc = 0., yc = 0.; // center of the cell
+
+  for (int i = 0; i < cell.n_vertices; ++i)
+  {
+    xc += points[cell.vertex(i)].coord(0);
+    yc += _transform_y[i] * points[cell.vertex(i)].coord(1);
+  }
+  xc /= cell.n_vertices;
+  yc /= cell.n_vertices;
+
+  expect(xc > _min_point.coord(0), "X-center of the cell is less than left limit. That's wrong");
+  expect(xc < _max_point.coord(0), "X-center of the cell is more than right limit. That's wrong");
+
+  if (yc >= _y_prev &&
+      yc <= _y_cur)
+    return true; // the layer contains this cell
+
+  return false; // the layer doesn't contain this cell
+}

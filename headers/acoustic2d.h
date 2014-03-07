@@ -80,6 +80,8 @@ private:
   void solve_explicit_triangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
   void solve_explicit_rectangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
   void solve_crank_nicolson(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
+
+  void coefficients_initialization();
 };
 
 
