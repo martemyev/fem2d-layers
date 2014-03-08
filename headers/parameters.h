@@ -125,6 +125,8 @@ public:
              */
   std::string LAYERS_FILE;
   std::string LAYERS_DIR;
+  bool USE_LAYERS_FILE;
+  bool CREATE_LAYERS_FILE;
 
 //            /**
 //             * The layers are distributed in parallel to each other, but probably not horizontally.

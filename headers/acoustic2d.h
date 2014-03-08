@@ -34,7 +34,7 @@ public:
 
 private:
             /**
-             * parameters of the problem
+             * Parameters of the problem
              */
   Parameters *_param;
 
@@ -82,6 +82,7 @@ private:
   void solve_crank_nicolson(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
 
   void coefficients_initialization();
+  void create_layers_file() const;
 };
 
 

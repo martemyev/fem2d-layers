@@ -24,6 +24,8 @@ void Parameters::default_parameters()
   GEO_DIR  = HOME_DIRECTORY + "/projects/tat_gmsfem/brandnew/geometries/";
   LAYERS_DIR = PROJECT_DIR + "/layers/";
   LAYERS_FILE = "lay_1_0.dat";
+  USE_LAYERS_FILE = false; // by default we use COEF_*_VALUES
+  CREATE_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
 
   RES_TOP_DIR = "../results/"; // this top level directory containing all results usually exists on the same level as 'build', 'sources', 'headers' directories
   RES_DIR = ""; // should be changed and based on some parameters
@@ -75,6 +77,7 @@ void Parameters::read_from_command_line(int argc, char **argv)
     ("meshdir",  po::value<std::string>(),  std::string("path to a directory with meshes (" + MESH_DIR + ")").c_str())
     ("ladir",    po::value<std::string>(),  std::string("path to a directory with layers files (" + LAYERS_DIR + ")").c_str())
     ("lafile",   po::value<std::string>(),  std::string("name of file with parameters of layers (" + LAYERS_FILE + ")").c_str())
+    ("lacreate", po::value<bool>(),         std::string("create (1) or don't (0) a new layers file (" + d2s(CREATE_LAYERS_FILE) + ")").c_str())
     ("scheme",   po::value<std::string>(),  std::string("time scheme (" + time_scheme + ")").c_str())
     ("tend",     po::value<double>(),       std::string("time ending (" + d2s(TIME_END) + ")").c_str())
     ("tstep",    po::value<double>(),       std::string("time step (" + d2s(TIME_STEP) + ")").c_str())
@@ -83,8 +86,6 @@ void Parameters::read_from_command_line(int argc, char **argv)
     ("nsub",     po::value<unsigned int>(), std::string("number of subdomains with different physical properties (" + d2s(N_SUBDOMAINS) + ")").c_str())
     ("a1file",   po::value<std::string>(),  std::string("name of the file with coefficient alpha distribution in domain number 1").c_str())
     ("b1file",   po::value<std::string>(),  std::string("name of the file with coefficient beta distribution in domain number 1").c_str())
-    ("a1val",    po::value<double>(),       std::string("the value of coefficient alpha in domain number 1 (" + d2s(COEF_A_VALUES[0]) + ")").c_str())
-    ("b1val",    po::value<double>(),       std::string("the value of coefficient beta in domain number 1 (" + d2s(COEF_B_VALUES[0]) + ")").c_str())
     ("a1val",    po::value<double>(),       std::string("the value of coefficient alpha in domain number 1 (" + d2s(COEF_A_VALUES[0]) + ")").c_str())
     ("b1val",    po::value<double>(),       std::string("the value of coefficient beta in domain number 1 (" + d2s(COEF_B_VALUES[0]) + ")").c_str())
     ("a2val",    po::value<double>(),       std::string("the value of coefficient alpha in domain number 2 (" + d2s(COEF_A_VALUES[1]) + ")").c_str())
@@ -116,6 +117,9 @@ void Parameters::read_from_command_line(int argc, char **argv)
     exit(0);
   }
 
+  require(!(vm.count("meshfile") && (vm.count("nfx") || vm.count("nfy"))),
+          "We cannot use triangular mesh and parameters for rectangular grid at the same time");
+
   if (vm.count("meshfile"))
     MESH_FILE = vm["meshfile"].as<std::string>();
 
@@ -123,10 +127,19 @@ void Parameters::read_from_command_line(int argc, char **argv)
     MESH_DIR = vm["meshdir"].as<std::string>();
 
   if (vm.count("ladir"))
+  {
     LAYERS_DIR = vm["ladir"].as<std::string>();
+    USE_LAYERS_FILE = true;
+  }
 
   if (vm.count("lafile"))
+  {
     LAYERS_FILE = vm["lafile"].as<std::string>();
+    USE_LAYERS_FILE = true;
+  }
+
+  if (vm.count("lacreate"))
+    CREATE_LAYERS_FILE = vm["lacreate"].as<bool>();
 
   if (vm.count("scheme"))
   {

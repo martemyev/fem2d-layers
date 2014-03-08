@@ -4,20 +4,20 @@
 #include "fem/auxiliary_functions.h"
 
 
-Layer::Layer() { }
+//Layer::Layer() { }
 
-Layer::Layer(const Layer &layer)
-  : Quadrangle(layer),
-    _number(layer._number)
-{ }
+//Layer::Layer(const Layer &layer)
+//  : Quadrangle(layer),
+//    _number(layer._number)
+//{ }
 
-Layer& Layer::operator =(const Layer &layer)
-{
-  Quadrangle::operator =(layer);
-  _number = layer._number;
-}
+//Layer& Layer::operator =(const Layer &layer)
+//{
+//  Quadrangle::operator =(layer);
+//  _number = layer._number;
+//}
 
-Layer::~Layer() { }
+//Layer::~Layer() { }
 
 
 
@@ -26,9 +26,13 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
                  double angle)
 {
   const double right_angle = 90.; // right angle in degrees
-  require(fabs(angle) < right_angle, "Angle doesn't belong to correct range: (-90, 90), its value : " + d2s(angle));
-  require(fabs(fabs(angle) - right_angle) > FLOAT_NUMBERS_EQUALITY_TOLERANCE,
-          "Angle is equal to right angle (90), what is prohibited");
+  expect(fabs(angle) < right_angle, "Angle doesn't belong to correct range: (-90, 90), its value : " + d2s(angle));
+  expect(fabs(fabs(angle) - right_angle) > FLOAT_NUMBERS_EQUALITY_TOLERANCE,
+         "Angle is equal to right angle (90), what is prohibited");
+
+  const unsigned int n_layers = thickness_percent.size(); // the total amount of layers
+  expect(number < n_layers, "The number of current layer (" + d2s(number + 1) +
+         ") is bigger than the total number of layers (" + d2s(n_layers) + ")");
 
   _number = number;
   _thickness_percent = thickness_percent[number];
@@ -38,120 +42,109 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
   _angle = angle; // the angle between horizontal (OX) axis
   _angle_rad_abs = fabs(_angle * PI / 180.); // abs angle in radians
 
-  // the numberation of vertices is the same as in case of rectangle
-  // 2 --- 3
-  // |     |
-  // 0 --- 1
+  // the numeration of vertices is the same as in case of rectangle
+  // 2 --- 3   Y
+  // |     |   |
+  // 0 --- 1   ----> X
   // and since the layers are distributed (nearly) horizontally
   // the x-components of the (0-th and 2-nd) and (1-st and 3-rd) points coincide
   // and they coincide to x-limits of the domain
   _X[0] = _X[2] = _min_point.coord(0);
   _X[1] = _X[3] = _max_point.coord(0);
 
-  // define y-coordinates of the layer vertices
   const double Hy = _max_point.coord(1) - _min_point.coord(1); // the length (y-direction) of the domain
   const double Hx = _max_point.coord(0) - _min_point.coord(0); // the length (x-direction) of the domain
-  const unsigned int n_layers = thickness_percent.size(); // the total amount of layers
-  double y_prev, y_cur = _min_point.coord(1);
+
+  // define the limits that the layer occupies when it is distributed horizontally
+  double y_bottom, y_top = _min_point.coord(1);
   for (int i = 0; i < _number + 1; ++i)
   {
-    y_prev = y_cur;
-    y_cur = (i == n_layers - 1 ? _max_point.coord(1) : y_prev + 0.01*thickness_percent[i]*Hy);
+    y_bottom = y_top;
+    if (i == n_layers - 1) // if it is the last layer, we don't calculate the limit to eliminate the error
+      y_top = _max_point.coord(1);
+    else
+      y_top = y_bottom + 0.01*thickness_percent[i]*Hy;
   }
-  //_y_prev = y_prev;
-  //_y_cur  = y_cur;
 
+  // now we define y-coordinates of the real layer vertices (taking the angle into account)
   if (fabs(_angle) < FLOAT_NUMBERS_EQUALITY_TOLERANCE) // if angle is zero, there is no stretching, and transformation is not required
   {
-    _Y[0] = _Y[1] = y_prev;
-    _Y[2] = _Y[3] = y_cur;
-
-   // _x_pos_left = _x_pos_right = 0.; // they don't matter in this case
-    //for (int i = 0; i < n_vertices; ++i)
-    //  _transform_y[i] = 1.;
+    _Y[0] = _Y[1] = y_bottom;
+    _Y[2] = _Y[3] = y_top;
   }
-  else // there is an angle
+  else // there is a slope
   {
+    // just for brevity
     const double x0 = _min_point.coord(0);
     const double x1 = _max_point.coord(0);
     const double y0 = _min_point.coord(1);
 
     if (_angle > 0) // if the angle is positive
     {
-      double x_prev = (Hx/Hy) * (-y_prev + y0) + x1;
-      double x_cur  = (Hx/Hy) * (-y_cur  + y0) + x1;
+      // we find the x-coordinates corresponding to y-coordinates of the layer
+      // using a diagonal line going through the left top corner of the domain with layers
+      // to the bottom right corner
+      //         ************
+      //         | \        |
+      //         |  \       |
+      // y_top   -----      |
+      //         |    \     |
+      //         |     \    |
+      // y_bottom--------   |
+      //         |       \  |
+      //         |        \ |
+      //         ************
+      //             x_left
+      //                x_right
+      //
+      double x_right = (Hx/Hy) * (-y_bottom + y0) + x1;
+      double x_left  = (Hx/Hy) * (-y_top    + y0) + x1;
 
-      const double tg = tan(_angle_rad_abs);
-      _Y[0] = y_prev - (x_prev - x0) * tg;
-      _Y[1] = y_prev + (x1 - x_prev) * tg;
-      _Y[2] = y_cur - (x_cur - x0) * tg;
-      _Y[3] = y_cur + (x1 - x_cur) * tg;
-
-      //_transform_y[0] = (fabs(y_prev - _Y[0]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_prev / _Y[0]);
-      //_transform_y[1] = (fabs(y_prev - _Y[1]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_prev / _Y[1]);
-      //_transform_y[2] = (fabs(y_cur  - _Y[2]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_cur  / _Y[2]);
-      //_transform_y[3] = (fabs(y_cur  - _Y[3]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE ? 1. : y_cur  / _Y[3]);
-
-      //_x_pos_left = x_cur;
-      //_x_pos_right = x_prev;
-
-      _ab = (_Y[1] - _Y[0]) / Hx;
-      _at = (_Y[3] - _Y[2]) / Hx;
-      _bb = _Y[0] - _ab * _X[0];
-      _bt = _Y[2] - _at * _X[2];
-
+      const double tg = tan(_angle_rad_abs); // for brevity
+      _Y[0] = y_bottom - (x_right - x0) * tg;
+      _Y[1] = y_bottom + (x1 - x_right) * tg;
+      _Y[2] = y_top - (x_left - x0) * tg;
+      _Y[3] = y_top + (x1 - x_left) * tg;
     }
     else // if the angle is negative
     {
-      require(false, "Not implemented");
-    }
+      // we find the x-coordinates corresponding to y-coordinates of the layer
+      // using a diagonal line going through the bottom left corner of the domain with layers
+      // to the top right corner
+      //         ***********
+      //         |       / |
+      //         |      /  |
+      // y_top   -------   |
+      //         |    /    |
+      //         |   /     |
+      // y_bottom----      |
+      //         | /       |
+      //         |/        |
+      //         ************
+      //            x_left
+      //               x_right
+      //
+      double x_right = (Hx/Hy) * (y_top    - y0) + x0;
+      double x_left  = (Hx/Hy) * (y_bottom - y0) + x0;
 
-    //calc_transformation();
+      const double tg = tan(_angle_rad_abs); // for brevity
+      _Y[0] = y_bottom + (x_left - x0) * tg;
+      _Y[1] = y_bottom - (x1 - x_left) * tg;
+      _Y[2] = y_top + (x_right - x0) * tg;
+      _Y[3] = y_top - (x1 - x_right) * tg;
+    }
   }
 
-
-//  double prev_layers_thickness = 0.; // total thickness of all previous layers
-//  for (int i = 0; i < _number; ++i)
-//    prev_layers_thickness += thicknesses[i];
-//  const double beg_point_y = _min_point.coord(1) + prev_layers_thickness;
-//  double beg_point_x = _min_point.coord(0); // in case of negative or 0 angle
-//  if (_angle > 0)
-//    beg_point_x = _max_point.coord(0); // in case of positive angle
-
-//  _beg_point = Point(beg_point_x, beg_point_y); // beginning point
-
+  // now when we know all real coordinates of the layer's vertices,
+  // we can calculate the coefficients of equations describing
+  // layer's sloped sides (remember that it has 2 sides parallel to OY axis).
+  // bottom side connects 0 and 1 vertices
+  _a_bottom = (_Y[1] - _Y[0]) / Hx;
+  _b_bottom = _Y[0] - _a_bottom * _X[0];
+  // top side connects 2 and 3 vertices
+  _a_top = (_Y[3] - _Y[2]) / Hx;
+  _b_top = _Y[2] - _a_top * _X[2];
 }
-
-
-
-//void Layer::calc_transformation()
-//{
-//  // the length of the domain. the layer is supposed to lye over the whole
-//  // (but in case of non-zero angle for some layers it is not true)
-//  const double Hx = _max_point.coord(0) - _min_point.coord(0);
-
-//  // the stretching in y-direction leads to this extra length in respect to normal height (depth)
-//  const double dy = Hx * tan(fabs(_angle_rad));
-
-
-//  // if dy is not zero, then angle is not zero, and there is a stretching, so we need a transformation
-
-//  // the transformation matrix is different when the angle is either positive or negative
-//  if (_angle > 0)
-//  {
-//    _transform_y[0] = _beg_point.coord(1) / (_beg_point.coord(1) - dy);
-//    _transform_y[1] = 1.;
-//    _transform_y[2] = 1.;
-//    _transform_y[3] = (_beg_point.coord(1) + _thickness) / (_beg_point.coord(1) + _thickness + dy);
-//  }
-//  else // if angle is negative or 0
-//  {
-//    _transform_y[0] = 1.;
-//    _transform_y[1] = _beg_point.coord(1) / (_beg_point.coord(1) - dy);
-//    _transform_y[2] = (_beg_point.coord(1) + _thickness) / (_beg_point.coord(1) + _thickness + dy);
-//    _transform_y[3] = 1.;
-//  }
-//}
 
 
 
@@ -160,55 +153,27 @@ bool Layer::contains_element(const Rectangle &cell, const std::vector<Point> &po
   // we think that a cell belongs to a layer if a center of the cell belongs to the layer
   double xc = 0., yc = 0.; // center of the cell
 
-  //const double tg = tan(_angle_rad_abs); // precomputed tangent
-
-  //double x[n_vertices], y[n_vertices];
-  //double ynew[n_vertices];
-
   for (int i = 0; i < cell.n_vertices; ++i)
   {
-    const double x = points[cell.vertex(i)].coord(0); // coordinates of the vertex
-    const double y = points[cell.vertex(i)].coord(1);
-
-    xc += x;
-    yc += y;
+    xc += points[cell.vertex(i)].coord(0);
+    yc += points[cell.vertex(i)].coord(1);
   }
-
-//  x[0] = x[2] = 0;
-//  x[1] = x[3] = 1;
-//  y[0] = 0;
-//  y[1] = 1;
-//  y[2] = 1;
-//  y[3] = 2;
-
-
-//  ynew[0] = y[0] - x[0]*tg;//(_x_pos_right - x[0]) * tg;
-//  ynew[1] = y[1] - x[1]*tg;//(_x_pos_right - x[1]) * tg;
-//  ynew[2] = y[2] - x[2]*tg;//(_x_pos_left  - x[2]) * tg;
-//  ynew[3] = y[3] - x[3]*tg;//(_x_pos_left  - x[3]) * tg;
-
-//  for (int i = 0; i < cell.n_vertices; ++i)
-//  {
-//    xc += x[i];
-//    yc += ynew[i];
-//  }
   xc /= cell.n_vertices;
   yc /= cell.n_vertices;
 
-//  expect(xc > _min_point.coord(0), "X-center of the cell is less than left limit. That's wrong");
-//  expect(xc < _max_point.coord(0), "X-center of the cell is more than right limit. That's wrong");
+  expect(xc > _min_point.coord(0), "X-center of the cell is less than left limit. That's wrong");
+  expect(xc < _max_point.coord(0), "X-center of the cell is more than right limit. That's wrong");
 //  expect(yc > _min_point.coord(1), "Y-center of the cell is less than bottom limit. That's wrong");
 //  expect(yc < _max_point.coord(1), "Y-center of the cell is more than top limit. That's wrong");
 
-//  if (yc >= _y_prev &&
-//      yc <= _y_cur)
-//    return true; // the layer contains this cell
+  // calculate the intersection of y=xc line with bottom and top slope side of the layer
+  const double y_bottom = _a_bottom * xc + _b_bottom;
+  const double y_top = _a_top * xc + _b_top;
 
-
-  const double yb = _ab * xc + _bb;
-  const double yt = _at * xc + _bt;
-
-  if (yc >= yb && yc <= yt)
+  // the cell belong to the layer if cell's center is within received bounds,
+  // and it also has to be inside domain with layers
+  if (yc >= _min_point.coord(1) && yc <= _max_point.coord(1) &&
+      yc >= y_bottom && yc <= y_top)
     return true;
 
   return false; // the layer doesn't contain this cell
