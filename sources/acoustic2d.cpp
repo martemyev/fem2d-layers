@@ -199,8 +199,10 @@ void Acoustic2D::solve_rectangles()
   }
 
   // fill up the array of coefficients alpha and beta
-  if (_param->CREATE_LAYERS_FILE)
-    create_layers_file();
+  if (_param->CREATE_BIN_LAYERS_FILE)
+    create_bin_layers_file();
+  if (_param->CREATE_AVE_LAYERS_FILE)
+    create_ave_layers_file();
 
   if (_param->USE_LAYERS_FILE)
     coefficients_initialization();
@@ -790,9 +792,7 @@ void Acoustic2D::create_ave_layers_file() const
 
   out << block_beg[2] << " " << block_end[2] << " 1 0\n";
 
-  out << 100. / (double)n_thin_layers << " "
-      << coef_a << " "
-      << coef_b << "\n"; // binary medium
+  out << "100 " << coef_a_aver << " " << coef_b_aver << "\n"; // average medium
 
   out.close();
 }

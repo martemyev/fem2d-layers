@@ -25,7 +25,8 @@ void Parameters::default_parameters()
   LAYERS_DIR = PROJECT_DIR + "/layers/";
   LAYERS_FILE = "lay_1_0.dat";
   USE_LAYERS_FILE = false; // by default we use COEF_*_VALUES
-  CREATE_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
+  CREATE_BIN_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
+  CREATE_AVE_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
 
   RES_TOP_DIR = "../results/"; // this top level directory containing all results usually exists on the same level as 'build', 'sources', 'headers' directories
   RES_DIR = ""; // should be changed and based on some parameters
@@ -77,7 +78,8 @@ void Parameters::read_from_command_line(int argc, char **argv)
     ("meshdir",  po::value<std::string>(),  std::string("path to a directory with meshes (" + MESH_DIR + ")").c_str())
     ("ladir",    po::value<std::string>(),  std::string("path to a directory with layers files (" + LAYERS_DIR + ")").c_str())
     ("lafile",   po::value<std::string>(),  std::string("name of file with parameters of layers (" + LAYERS_FILE + ")").c_str())
-    ("lacreate", po::value<bool>(),         std::string("create (1) or don't (0) a new layers file (" + d2s(CREATE_LAYERS_FILE) + ")").c_str())
+    ("lacrebin", po::value<bool>(),         std::string("create (1) or don't (0) a new binary layers file (" + d2s(CREATE_BIN_LAYERS_FILE) + ")").c_str())
+    ("lacreave", po::value<bool>(),         std::string("create (1) or don't (0) a new average layers file (" + d2s(CREATE_AVE_LAYERS_FILE) + ")").c_str())
     ("scheme",   po::value<std::string>(),  std::string("time scheme (" + time_scheme + ")").c_str())
     ("tend",     po::value<double>(),       std::string("time ending (" + d2s(TIME_END) + ")").c_str())
     ("tstep",    po::value<double>(),       std::string("time step (" + d2s(TIME_STEP) + ")").c_str())
@@ -138,8 +140,10 @@ void Parameters::read_from_command_line(int argc, char **argv)
     USE_LAYERS_FILE = true;
   }
 
-  if (vm.count("lacreate"))
-    CREATE_LAYERS_FILE = vm["lacreate"].as<bool>();
+  if (vm.count("lacrebin"))
+    CREATE_BIN_LAYERS_FILE = vm["lacrebin"].as<bool>();
+  if (vm.count("lacreave"))
+    CREATE_AVE_LAYERS_FILE = vm["lacreave"].as<bool>();
 
   if (vm.count("scheme"))
   {
