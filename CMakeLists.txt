@@ -24,7 +24,7 @@ link_directories(${LIB_DIR})
 # --- project ---
 #set(CMAKE_CXX_COMPILER mpicxx)
 project(fem2d_acoustic)
-add_definitions(-std=c++0x)
+add_definitions(-std=c++0x -Wall)
 # ---------------
 
 

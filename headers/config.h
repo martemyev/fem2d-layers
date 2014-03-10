@@ -4,7 +4,7 @@
 #include <string>
 
 /* #undef DEBUG */
-#define TESTING
+/* #undef TESTING */
 /* #undef HAVE_64BIT_SIZE_T */
 
 const std::string TEST_DIR = "/home/artemiev/projects/fem2d_acoustic/test_dir/";

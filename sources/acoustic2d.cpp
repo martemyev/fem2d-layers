@@ -707,10 +707,10 @@ void Acoustic2D::create_bin_layers_file() const
   const double Hy = _fmesh.max_coord().coord(1) - _fmesh.min_coord().coord(1);
   const double thickness = 0.01 * (block_end[2] - block_beg[2]) * Hy;
   const double h_thin_layer = 0.004 * Hy; // 4 meters if the domain is 1000 x 1000 m
-  const unsigned int n_thin_layers = (int)(thickness / h_thin_layer);
+  const unsigned int n_thin_layers = (int)thickness / (int)h_thin_layer;
   double coef_a, coef_b; // for brevity
 
-  out << "20 80 " << n_thin_layers << " 0\n";
+  out << block_beg[2] << " " << block_end[2] << " " << n_thin_layers << " 0\n";
   for (int i = 0; i < n_thin_layers; ++i)
   {
     // for even layers we use _param->COEF_*_VALUES[1]
@@ -726,10 +726,15 @@ void Acoustic2D::create_bin_layers_file() const
       coef_b = _param->COEF_B_VALUES[0];
     }
 
-    out << 100. / (double)n_thin_layers << " "
+    out << 100. / n_thin_layers << " "
         << coef_a << " "
         << coef_b << "\n"; // binary medium
   }
+
+  std::cout << "thickness = " << thickness << std::endl;
+  std::cout << "h_thin_layer = " << h_thin_layer << std::endl;
+  std::cout << "n_thin_layers = " << n_thin_layers << std::endl;
+  std::cout << "(int)n_thin_layers = " << (int)n_thin_layers << std::endl;
 
   out.close();
 }
@@ -789,6 +794,12 @@ void Acoustic2D::create_ave_layers_file() const
   }
   coef_a_aver /= thickness;
   coef_b_aver /= thickness;
+
+  std::cout << "thickness = " << thickness << std::endl;
+  std::cout << "h_thin_layer = " << h_thin_layer << std::endl;
+  std::cout << "n_thin_layers = " << n_thin_layers << std::endl;
+  std::cout << "coef_a_aver = " << coef_a_aver << std::endl;
+  std::cout << "coef_b_aver = " << coef_b_aver << std::endl;
 
   out << block_beg[2] << " " << block_end[2] << " 1 0\n";
 
