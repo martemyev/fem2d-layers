@@ -66,7 +66,7 @@ void Acoustic2D::solve_triangles()
   // allocate the memory for local matrices and vectors
   double **local_mass_mat = new double*[Triangle::n_dofs_first];
   double **local_stiff_mat = new double*[Triangle::n_dofs_first];
-  for (int i = 0; i < Triangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Triangle::n_dofs_first; ++i)
   {
     local_mass_mat[i] = new double[Triangle::n_dofs_first];
     local_stiff_mat[i] = new double[Triangle::n_dofs_first];
@@ -75,10 +75,10 @@ void Acoustic2D::solve_triangles()
   // fill up the array of coefficient a
   double *coef_alpha = new double[_fmesh.n_triangles()];
   double *coef_beta  = new double[_fmesh.n_triangles()];
-  for (int cell = 0; cell < _fmesh.n_triangles(); ++cell)
+  for (unsigned int cell = 0; cell < _fmesh.n_triangles(); ++cell)
   {
     const Triangle triangle = _fmesh.triangle(cell);
-    if (triangle.material_id() == _param->INCL_DOMAIN)
+    if ((int)triangle.material_id() == _param->INCL_DOMAIN)
     {
       coef_alpha[cell] = _param->COEF_A_VALUES[1]; // coefficient in the inclusion
       coef_beta[cell]  = _param->COEF_B_VALUES[1];  // coefficient in the inclusion
@@ -101,19 +101,19 @@ void Acoustic2D::solve_triangles()
   }
 
   // assemble the matrices and the rhs vector
-  for (int cell = 0; cell < _fmesh.n_triangles(); ++cell)
+  for (unsigned int cell = 0; cell < _fmesh.n_triangles(); ++cell)
   {
     const Triangle triangle = _fmesh.triangle(cell);
     triangle.local_mass_matrix(coef_alpha[cell], local_mass_mat);
     triangle.local_stiffness_matrix(coef_beta[cell], local_stiff_mat);
 
-    for (int i = 0; i < triangle.n_dofs(); ++i)
+    for (unsigned int i = 0; i < triangle.n_dofs(); ++i)
     {
-      const int dof_i = triangle.dof(i);
+      const unsigned int dof_i = triangle.dof(i);
       //VecSetValue(_global_rhs, dof_i, local_rhs_vec[i], ADD_VALUES);
-      for (int j = 0; j < triangle.n_dofs(); ++j)
+      for (unsigned int j = 0; j < triangle.n_dofs(); ++j)
       {
-        const int dof_j = triangle.dof(j);
+        const unsigned int dof_j = triangle.dof(j);
         MatSetValue(_global_mass_mat, dof_i, dof_j, local_mass_mat[i][j], ADD_VALUES);
         MatSetValue(_global_stiff_mat, dof_i, dof_j, local_stiff_mat[i][j], ADD_VALUES);
       }
@@ -124,7 +124,7 @@ void Acoustic2D::solve_triangles()
   delete[] coef_beta;
 
   // free the memory
-  for (int i = 0; i < Triangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Triangle::n_dofs_first; ++i)
   {
     delete[] local_mass_mat[i];
     delete[] local_stiff_mat[i];
@@ -192,7 +192,7 @@ void Acoustic2D::solve_rectangles()
   // allocate the memory for local matrices and vectors
   double **local_mass_mat = new double*[Rectangle::n_dofs_first];
   double **local_stiff_mat = new double*[Rectangle::n_dofs_first];
-  for (int i = 0; i < Rectangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
   {
     local_mass_mat[i] = new double[Rectangle::n_dofs_first];
     local_stiff_mat[i] = new double[Rectangle::n_dofs_first];
@@ -210,9 +210,9 @@ void Acoustic2D::solve_rectangles()
   {
     _coef_alpha.resize(_fmesh.n_rectangles(), _param->COEF_A_VALUES[0]);
     _coef_beta.resize(_fmesh.n_rectangles(), _param->COEF_B_VALUES[0]);
-    for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
+    for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
     {
-      if (_fmesh.rectangle(cell).material_id() == _param->INCL_DOMAIN)
+      if ((int)_fmesh.rectangle(cell).material_id() == _param->INCL_DOMAIN)
       {
         _coef_alpha[cell] = _param->COEF_A_VALUES[1]; // coefficient in the inclusion
         _coef_beta[cell]  = _param->COEF_B_VALUES[1];  // coefficient in the inclusion
@@ -221,18 +221,18 @@ void Acoustic2D::solve_rectangles()
   }
 
   // assemble the matrices
-  for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
+  for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
   {
     const Rectangle rectangle = _fmesh.rectangle(cell);
     rectangle.local_mass_matrix(_coef_alpha[cell], local_mass_mat);
     rectangle.local_stiffness_matrix(_coef_beta[cell], local_stiff_mat);
 
-    for (int i = 0; i < rectangle.n_dofs(); ++i)
+    for (unsigned int i = 0; i < rectangle.n_dofs(); ++i)
     {
-      const int dof_i = rectangle.dof(i);
-      for (int j = 0; j < rectangle.n_dofs(); ++j)
+      const unsigned int dof_i = rectangle.dof(i);
+      for (unsigned int j = 0; j < rectangle.n_dofs(); ++j)
       {
-        const int dof_j = rectangle.dof(j);
+        const unsigned int dof_j = rectangle.dof(j);
         MatSetValue(_global_mass_mat, dof_i, dof_j, local_mass_mat[i][j], ADD_VALUES);
         MatSetValue(_global_stiff_mat, dof_i, dof_j, local_stiff_mat[i][j], ADD_VALUES);
       }
@@ -240,7 +240,7 @@ void Acoustic2D::solve_rectangles()
   }
 
   // free the memory
-  for (int i = 0; i < Rectangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
   {
     delete[] local_mass_mat[i];
     delete[] local_stiff_mat[i];
@@ -290,7 +290,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
 
   // fill vectors with solution on the 0-th and 1-st time steps
   const InitialSolution init_solution;
-  for (int d = 0; d < dof_handler.n_dofs(); ++d)
+  for (unsigned int d = 0; d < dof_handler.n_dofs(); ++d)
   {
     VecSetValue(solution_2, d, init_solution.value(dof_handler.dof(d), _param->TIME_BEG), INSERT_VALUES);
     VecSetValue(solution_1, d, init_solution.value(dof_handler.dof(d), _param->TIME_BEG + dt), INSERT_VALUES);
@@ -321,7 +321,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
   double *local_rhs_vec = new double[Triangle::n_dofs_first];
 
   require(_param->N_TIME_STEPS > 2, "There is no time steps to perform: n_time_steps = " + d2s(_param->N_TIME_STEPS));
-  for (int time_step = 2; time_step <= _param->N_TIME_STEPS; ++time_step)
+  for (unsigned int time_step = 2; time_step <= _param->N_TIME_STEPS; ++time_step)
   {
     const double time = _param->TIME_BEG + time_step * dt; // current time
     VecSet(system_rhs, 0.); // zeroing the system rhs vector
@@ -329,13 +329,13 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
 
     // assemble some parts of system rhs vector
     const RHSFunction rhs_function(*_param);
-    for (int cell = 0; cell < _fmesh.n_triangles(); ++cell)
+    for (unsigned int cell = 0; cell < _fmesh.n_triangles(); ++cell)
     {
       Triangle triangle = _fmesh.triangle(cell);
       triangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, local_rhs_vec); // rhs function on the previous time step
-      for (int i = 0; i < triangle.n_dofs(); ++i)
+      for (unsigned int i = 0; i < triangle.n_dofs(); ++i)
       {
-        const int dof_i = triangle.dof(i);
+        const unsigned int dof_i = triangle.dof(i);
         VecSetValue(system_rhs, dof_i, local_rhs_vec[i], ADD_VALUES);
       }
     } // rhs part assembling
@@ -351,7 +351,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
 
     // impose Dirichlet boundary condition
     const BoundaryFunction boundary_function;
-    for (int i = 0; i < b_nodes.size(); ++i)
+    for (unsigned int i = 0; i < b_nodes.size(); ++i)
       VecSetValue(system_rhs, b_nodes[i], boundary_function.value(_fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
 
     // solve the SLAE
@@ -389,7 +389,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
       out.setf(std::ios::scientific);
       out.precision(16);
       out << csr_pattern.order() << "\n";
-      for (int i = 0; i < csr_pattern.order(); ++i)
+      for (unsigned int i = 0; i < csr_pattern.order(); ++i)
         out << solution_values[i] << "\n";
       out.close();
     }
@@ -432,7 +432,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
   // fill vectors with solution on the 0-th and 1-st time steps
   const InitialSolution init_solution;
-  for (int d = 0; d < dof_handler.n_dofs(); ++d)
+  for (unsigned int d = 0; d < dof_handler.n_dofs(); ++d)
   {
     VecSetValue(solution_2, d, init_solution.value(dof_handler.dof(d), _param->TIME_BEG), INSERT_VALUES);
     VecSetValue(solution_1, d, init_solution.value(dof_handler.dof(d), _param->TIME_BEG + dt), INSERT_VALUES);
@@ -467,7 +467,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
   if (_param->PRINT_INFO)
     std::cout << "time loop started..." << std::endl;
 
-  for (int time_step = 2; time_step <= _param->N_TIME_STEPS; ++time_step)
+  for (unsigned int time_step = 2; time_step <= _param->N_TIME_STEPS; ++time_step)
   {
     const double time = _param->TIME_BEG + time_step * dt; // current time
     VecSet(system_rhs, 0.); // zeroing the system rhs vector
@@ -475,13 +475,13 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
     // assemble some parts of system rhs vector
     const RHSFunction rhs_function(*_param);
-    for (int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
+    for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
     {
       Rectangle rectangle = _fmesh.rectangle(cell);
       rectangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, local_rhs_vec); // rhs function on the previous time step
-      for (int i = 0; i < rectangle.n_dofs(); ++i)
+      for (unsigned int i = 0; i < rectangle.n_dofs(); ++i)
       {
-        const int dof_i = rectangle.dof(i);
+        const unsigned int dof_i = rectangle.dof(i);
         VecSetValue(system_rhs, dof_i, local_rhs_vec[i], ADD_VALUES);
       }
     } // rhs part assembling
@@ -497,7 +497,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
     // impose Dirichlet boundary condition
     const BoundaryFunction boundary_function;
-    for (int i = 0; i < b_nodes.size(); ++i)
+    for (unsigned int i = 0; i < b_nodes.size(); ++i)
       VecSetValue(system_rhs, b_nodes[i], boundary_function.value(_fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
 
     // solve the SLAE
@@ -519,7 +519,11 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     {
       Result res(&dof_handler);
       std::string fname = _param->VTU_DIR + "/res-" + d2s(time_step) + ".vts";
-      res.write_vts(fname, _param->N_FINE_X, _param->N_FINE_Y, solution); //, exact_solution, _coef_alpha, _coef_beta);
+      if (time_step == _param->N_TIME_STEPS && _param->EXPORT_COEFFICIENTS) // we export coefficients only for the last step
+        res.write_vts(fname, _param->N_FINE_X, _param->N_FINE_Y, solution, NULL, _coef_alpha, _coef_beta);
+      else
+        res.write_vts(fname, _param->N_FINE_X, _param->N_FINE_Y, solution); //, exact_solution, _coef_alpha, _coef_beta);
+
       if (_param->PRINT_INFO)
       {
         double norm;
@@ -541,7 +545,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
       out.setf(std::ios::scientific);
       out.precision(16);
       out << csr_pattern.order() << "\n";
-      for (int i = 0; i < csr_pattern.order(); ++i)
+      for (unsigned int i = 0; i < csr_pattern.order(); ++i)
         out << solution_values[i] << "\n";
       out.close();
     }
@@ -597,7 +601,7 @@ void Acoustic2D::coefficients_initialization()
   std::vector<BlockOfLayers> blocks(n_blocks); // allocate the memory for all blocks
   std::vector<double> block_beg(n_blocks), block_end(n_blocks); // in percents
 
-  for (int bl = 0; bl < n_blocks; ++bl)
+  for (unsigned int bl = 0; bl < n_blocks; ++bl)
   {
     double layer_angle; // slope angle of the layers
     unsigned int n_layers; // the number of layers
@@ -633,7 +637,7 @@ void Acoustic2D::coefficients_initialization()
 
   // read the info abount thickness and coefficients of each layer
   double total_h_percent = 0.; // in the end of the day total_h should be 100 (because it's in percent). in other case those thicknesses don't make sense
-  for (int i = 0; i < n_layers; ++i)
+  for (unsigned int i = 0; i < n_layers; ++i)
   {
     // read info
     in >> layer_h_percent[i]
@@ -655,17 +659,17 @@ void Acoustic2D::coefficients_initialization()
 
   // check that blocks don't intersect each other and fill all domain
   double total_block_h = 0.; // in percent
-  for (int i = 0; i < n_blocks; ++i)
+  for (unsigned int i = 0; i < n_blocks; ++i)
     total_block_h += block_end[i] - block_beg[i];
   require(fabs(total_block_h - 100.) < FLOAT_NUMBERS_EQUALITY_TOLERANCE,
           "The blocks either intersect each other or don't fill whole domain");
 
 
   // distribute the coefficients in each cell according to the layers
-  for (int i = 0; i < cells.size(); ++i)
+  for (unsigned int i = 0; i < cells.size(); ++i)
   {
     bool coef_found = false;
-    for (int j = 0; j < n_blocks && coef_found == false; ++j)
+    for (unsigned int j = 0; j < n_blocks && coef_found == false; ++j)
     {
       if (blocks[j].contains_element(cells[i], _fmesh.vertices()))
       {
@@ -682,7 +686,7 @@ void Acoustic2D::coefficients_initialization()
 
 void Acoustic2D::create_bin_layers_file() const
 {
-  std::string fname = _param->LAYERS_DIR + "/lay_3_bin.dat";
+  std::string fname = _param->LAYERS_DIR + "/lay_3_bin_" + d2s(_param->H_BIN_LAYER_PERCENT) + "_" + _param->LAYERS_FILE_SUFFIX + ".dat";
 
   std::cout << "\ncreation of binary layers file: " << fname << std::endl;
   std::ofstream out(fname.c_str());
@@ -691,27 +695,33 @@ void Acoustic2D::create_bin_layers_file() const
   out.setf(std::ios::scientific);
   out.precision(14);
 
-  const unsigned int n_blocks = 3;
+  const unsigned int n_blocks = 1;
   out << n_blocks << "\n";
 
-  const unsigned int block_beg[] = { 0, 80, 20 };
-  const unsigned int block_end[] = { 20, 100, 80 };
+  const unsigned int block_beg[] = {0, 0, 0}; //{ 0, 80, 20 };
+  const unsigned int block_end[] = {0, 0, 100}; //{ 20, 100, 80 };
   //const unsigned int n_layers[]  = { 1, 1, 20 };
 
-  out << block_beg[0] << " " << block_end[0] << " 1 0\n";
-  out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
+  if (fabs(block_end[0] - block_beg[0]) > FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  {
+    out << block_beg[0] << " " << block_end[0] << " 1 0\n";
+    out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
+  }
 
-  out << block_beg[1] << " " << block_end[1] << " 1 0\n";
-  out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
+  if (fabs(block_end[1] - block_beg[1]) > FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  {
+    out << block_beg[1] << " " << block_end[1] << " 1 0\n";
+    out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
+  }
 
   const double Hy = _fmesh.max_coord().coord(1) - _fmesh.min_coord().coord(1);
   const double thickness = 0.01 * (block_end[2] - block_beg[2]) * Hy;
-  const double h_thin_layer = 0.004 * Hy; // 4 meters if the domain is 1000 x 1000 m
-  const unsigned int n_thin_layers = (int)thickness / (int)h_thin_layer;
+  const double h_thin_layer = 0.01 * _param->H_BIN_LAYER_PERCENT * Hy; // some meters if the domain is 1000 x 1000 m
+  const unsigned int n_thin_layers = (unsigned)(thickness / h_thin_layer);
   double coef_a, coef_b; // for brevity
 
   out << block_beg[2] << " " << block_end[2] << " " << n_thin_layers << " 0\n";
-  for (int i = 0; i < n_thin_layers; ++i)
+  for (unsigned int i = 0; i < n_thin_layers; ++i)
   {
     // for even layers we use _param->COEF_*_VALUES[1]
     // for odd  layers we use _param->COEF_*_VALUES[0]
@@ -726,15 +736,16 @@ void Acoustic2D::create_bin_layers_file() const
       coef_b = _param->COEF_B_VALUES[0];
     }
 
-    out << 100. / n_thin_layers << " "
+    out << 100. / (double)n_thin_layers << " "
         << coef_a << " "
         << coef_b << "\n"; // binary medium
   }
 
+#if defined(DEBUG)
   std::cout << "thickness = " << thickness << std::endl;
   std::cout << "h_thin_layer = " << h_thin_layer << std::endl;
   std::cout << "n_thin_layers = " << n_thin_layers << std::endl;
-  std::cout << "(int)n_thin_layers = " << (int)n_thin_layers << std::endl;
+#endif
 
   out.close();
 }
@@ -743,7 +754,7 @@ void Acoustic2D::create_bin_layers_file() const
 
 void Acoustic2D::create_ave_layers_file() const
 {
-  std::string fname = _param->LAYERS_DIR + "/lay_3_ave.dat";
+  std::string fname = _param->LAYERS_DIR + "/lay_3_ave_" + d2s(_param->H_BIN_LAYER_PERCENT) + "_" + _param->LAYERS_FILE_SUFFIX + ".dat";
 
   std::cout << "\ncreation of average layers file: " << fname << std::endl;
   std::ofstream out(fname.c_str());
@@ -752,29 +763,35 @@ void Acoustic2D::create_ave_layers_file() const
   out.setf(std::ios::scientific);
   out.precision(14);
 
-  const unsigned int n_blocks = 3;
+  const unsigned int n_blocks = 1;
   out << n_blocks << "\n";
 
-  const unsigned int block_beg[] = { 0, 80, 20 };
-  const unsigned int block_end[] = { 20, 100, 80 };
+  const unsigned int block_beg[] = {0, 0, 0}; //{ 0, 80, 20 };
+  const unsigned int block_end[] = {0, 0, 100}; //{ 20, 100, 80 };
   //const unsigned int n_layers[]  = { 1, 1, 20 };
 
-  out << block_beg[0] << " " << block_end[0] << " 1 0\n";
-  out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
+  if (fabs(block_end[0] - block_beg[0]) > FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  {
+    out << block_beg[0] << " " << block_end[0] << " 1 0\n";
+    out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
+  }
 
-  out << block_beg[1] << " " << block_end[1] << " 1 0\n";
-  out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
+  if (fabs(block_end[1] - block_beg[1]) > FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  {
+    out << block_beg[1] << " " << block_end[1] << " 1 0\n";
+    out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
+  }
 
   const double Hy = _fmesh.max_coord().coord(1) - _fmesh.min_coord().coord(1);
   const double thickness = 0.01 * (block_end[2] - block_beg[2]) * Hy;
-  const double h_thin_layer = 0.004 * Hy; // 4 meters if the domain is 1000 x 1000 m
-  const unsigned int n_thin_layers = (int)(thickness / h_thin_layer);
+  const double h_thin_layer = 0.01 * _param->H_BIN_LAYER_PERCENT * Hy; // some meters if the domain is 1000 x 1000 m
+  const unsigned int n_thin_layers = (unsigned)(thickness / h_thin_layer);
 
   double coef_a, coef_b; // for brevity
   double coef_a_aver = 0.;
   double coef_b_aver = 0.;
 
-  for (int i = 0; i < n_thin_layers; ++i)
+  for (unsigned int i = 0; i < n_thin_layers; ++i)
   {
     // for even layers we use _param->COEF_*_VALUES[1]
     // for odd  layers we use _param->COEF_*_VALUES[0]
@@ -789,20 +806,26 @@ void Acoustic2D::create_ave_layers_file() const
       coef_b = _param->COEF_B_VALUES[0];
     }
 
-    coef_a_aver += h_thin_layer * coef_a;
-    coef_b_aver += h_thin_layer * coef_b;
+//    coef_a_aver += h_thin_layer * coef_a;
+//    coef_b_aver += h_thin_layer * coef_b;
+    coef_a_aver += h_thin_layer / coef_a;
+    coef_b_aver += h_thin_layer / coef_b;
   }
   coef_a_aver /= thickness;
   coef_b_aver /= thickness;
 
+  coef_a_aver = 1. / coef_a_aver;
+  coef_b_aver = 1. / coef_b_aver;
+
+#if defined(DEBUG)
   std::cout << "thickness = " << thickness << std::endl;
   std::cout << "h_thin_layer = " << h_thin_layer << std::endl;
   std::cout << "n_thin_layers = " << n_thin_layers << std::endl;
   std::cout << "coef_a_aver = " << coef_a_aver << std::endl;
   std::cout << "coef_b_aver = " << coef_b_aver << std::endl;
+#endif
 
   out << block_beg[2] << " " << block_end[2] << " 1 0\n";
-
   out << "100 " << coef_a_aver << " " << coef_b_aver << "\n"; // average medium
 
   out.close();

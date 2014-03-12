@@ -60,7 +60,7 @@ public:
             /**
              * The number of the time steps
              */
-  int N_TIME_STEPS;
+  unsigned int N_TIME_STEPS;
 
             /**
              * The order of the finite element basis functions
@@ -128,6 +128,8 @@ public:
   bool USE_LAYERS_FILE;
   bool CREATE_BIN_LAYERS_FILE;
   bool CREATE_AVE_LAYERS_FILE;
+  double H_BIN_LAYER_PERCENT;
+  std::string LAYERS_FILE_SUFFIX;
 
 //            /**
 //             * The layers are distributed in parallel to each other, but probably not horizontally.
@@ -202,6 +204,11 @@ public:
              * Whether we need to print some info on the screen during the calculations
              */
   bool PRINT_INFO;
+
+            /**
+             * Do we need to include coefficients distribution in the file with results
+             */
+  bool EXPORT_COEFFICIENTS;
 
             /**
              * If we need to print .vtu files we can do that not for each time step, but for every (VTU_STEP)-th step

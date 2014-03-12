@@ -24,7 +24,7 @@ void BlockOfLayers::init(const Point &min_point, const Point &max_point,
   _layers_coef_beta = layers_coef_beta;
 
   _layers.resize(_n_layers);
-  for (int i = 0; i < _n_layers; ++i)
+  for (unsigned int i = 0; i < _n_layers; ++i)
     _layers[i].init(i, _layers_thickness, _min_point, _max_point, _angle);
 }
 
@@ -36,7 +36,7 @@ bool BlockOfLayers::contains_element(const Rectangle &cell,
   // we think that a cell belongs to a block if a center of the cell belongs to the block
   double xc = 0., yc = 0.; // center of the cell
 
-  for (int i = 0; i < cell.n_vertices; ++i)
+  for (unsigned int i = 0; i < cell.n_vertices; ++i)
   {
     xc += points[cell.vertex(i)].coord(0);
     yc += points[cell.vertex(i)].coord(1);
@@ -62,7 +62,7 @@ void BlockOfLayers::get_coefs(const Rectangle &cell,
 {
   expect(contains_element(cell, points), "This block doesn't have this cell");
 
-  for (int i = 0; i < _n_layers; ++i)
+  for (unsigned int i = 0; i < _n_layers; ++i)
   {
     if (_layers[i].contains_element(cell, points))
     {

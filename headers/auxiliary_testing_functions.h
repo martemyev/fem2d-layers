@@ -31,8 +31,8 @@ void compare_points(const FineMesh &fmesh, unsigned int n_points, Point points[]
   EXPECT_EQ(fmesh.n_vertices(), n_points);
 
   // check the coordinates
-  for (int i = 0; i < fmesh.n_vertices(); ++i)
-    for (int j = 0; j < Point::n_coord; ++j)
+  for (unsigned int i = 0; i < fmesh.n_vertices(); ++i)
+    for (unsigned int j = 0; j < Point::n_coord; ++j)
       EXPECT_DOUBLE_EQ(fmesh.vertex(i).coord(j), points[i].coord(j));
 }
 
@@ -44,16 +44,16 @@ void compare_triangles(const FineMesh &fmesh, unsigned int n_triangles, Triangle
   EXPECT_EQ(fmesh.n_triangles(), n_triangles);
 
   // check triangles themselves
-  for (int i = 0; i < fmesh.n_triangles(); ++i)
+  for (unsigned int i = 0; i < fmesh.n_triangles(); ++i)
   {
-    for (int j = 0; j < Triangle::n_vertices; ++j)
+    for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
     {
       // check vertices numbers.
       // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
       EXPECT_EQ(fmesh.triangle(i).vertex(j) + 1, triangles[i].vertex(j));
 
       // check vertices coordinates (once again)
-      for (int k = 0; k < Point::n_coord; ++k)
+      for (unsigned int k = 0; k < Point::n_coord; ++k)
         EXPECT_DOUBLE_EQ(fmesh.vertex(fmesh.triangle(i).vertex(j)).coord(k), points[triangles[i].vertex(j) - 1].coord(k));
     }
   }
@@ -66,8 +66,8 @@ void check_dof_handler(const DoFHandler &dof_handler, const FineMesh &fmesh, uns
   if (fe_order == 1)
   {
     EXPECT_EQ(dof_handler.n_dofs(), fmesh.n_vertices());
-    for (int i = 0; i < dof_handler.n_dofs(); ++i)
-      for (int j = 0; j < Point::n_coord; ++j)
+    for (unsigned int i = 0; i < dof_handler.n_dofs(); ++i)
+      for (unsigned int j = 0; j < Point::n_coord; ++j)
         EXPECT_DOUBLE_EQ(dof_handler.dof(i).coord(j), fmesh.vertex(i).coord(j));
   }
 }
@@ -78,10 +78,10 @@ void check_csr_pattern(const CSRPattern &csr_pattern, unsigned int n_points, uns
 {
   EXPECT_EQ(csr_pattern.order(), n_points);
 
-  for (int i = 0; i < n_points + 1; ++i)
+  for (unsigned int i = 0; i < n_points + 1; ++i)
     EXPECT_EQ(csr_pattern.row(i), row[i]);
 
-  for (int i = 0; i < csr_pattern.row(n_points); ++i)
+  for (unsigned int i = 0; i < csr_pattern.row(n_points); ++i)
     EXPECT_EQ(csr_pattern.col(i), col[i]);
 }
 
@@ -131,32 +131,32 @@ void check_elliptic_solution_triangles(bool sparse,
   // allocate the memory for local matrices and vectors
   double **local_stiff_mat = new double*[Triangle::n_dofs_first];
   double *local_rhs_vec = new double[Triangle::n_dofs_first];
-  for (int i = 0; i < Triangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Triangle::n_dofs_first; ++i)
     local_stiff_mat[i] = new double[Triangle::n_dofs_first];
 
   const double time = 0.; // because it's elliptic problem
 
   // assemble the matrix
-  for (int cell = 0; cell < fmesh.n_triangles(); ++cell)
+  for (unsigned int cell = 0; cell < fmesh.n_triangles(); ++cell)
   {
     Triangle triangle = fmesh.triangle(cell);
     triangle.local_stiffness_matrix(1, local_stiff_mat); // 1 is the coefficient beta
     triangle.local_rhs_vector(rhs_function, fmesh.vertices(), time, local_rhs_vec);
 
-    for (int i = 0; i < triangle.n_dofs(); ++i)
+    for (unsigned int i = 0; i < triangle.n_dofs(); ++i)
     {
-      const int dof_i = triangle.dof(i);
+      const unsigned int dof_i = triangle.dof(i);
       VecSetValue(system_rhs, dof_i, local_rhs_vec[i], ADD_VALUES);
-      for (int j = 0; j < triangle.n_dofs(); ++j)
+      for (unsigned int j = 0; j < triangle.n_dofs(); ++j)
       {
-        const int dof_j = triangle.dof(j);
+        const unsigned int dof_j = triangle.dof(j);
         MatSetValue(global_stiff_mat, dof_i, dof_j, local_stiff_mat[i][j], ADD_VALUES);
       }
     }
   }
 
   // free the memory
-  for (int i = 0; i < Triangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Triangle::n_dofs_first; ++i)
     delete[] local_stiff_mat[i];
   delete[] local_stiff_mat;
   delete[] local_rhs_vec;
@@ -170,7 +170,7 @@ void check_elliptic_solution_triangles(bool sparse,
   // impose Dirichlet boundary condition
   // with ones on diagonal
   MatZeroRows(global_stiff_mat, b_nodes.size(), &b_nodes[0], 1., solution, system_rhs); // change the matrix
-  for (int i = 0; i < b_nodes.size(); ++i)
+  for (unsigned int i = 0; i < b_nodes.size(); ++i)
     VecSetValue(system_rhs, b_nodes[i], an_solution.value(fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
 
   // solve the SLAE
@@ -181,7 +181,7 @@ void check_elliptic_solution_triangles(bool sparse,
   KSPSolve(ksp, system_rhs, solution);
 
   // check solution
-  for (int i = 0; i < fmesh.n_vertices(); ++i)
+  for (unsigned int i = 0; i < fmesh.n_vertices(); ++i)
   {
     Point vert = fmesh.vertex(i);
     VecSetValue(exact_solution, i, an_solution.value(vert, time), INSERT_VALUES);
@@ -253,32 +253,32 @@ void check_elliptic_solution_rectangles(bool sparse,
   // allocate the memory for local matrices and vectors
   double **local_stiff_mat = new double*[Rectangle::n_dofs_first];
   double *local_rhs_vec = new double[Rectangle::n_dofs_first];
-  for (int i = 0; i < Rectangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
     local_stiff_mat[i] = new double[Rectangle::n_dofs_first];
 
   const double time = 0.; // because it's elliptic problem
 
   // assemble the matrix
-  for (int cell = 0; cell < fmesh.n_rectangles(); ++cell)
+  for (unsigned int cell = 0; cell < fmesh.n_rectangles(); ++cell)
   {
     Rectangle rectangle = fmesh.rectangle(cell);
     rectangle.local_stiffness_matrix(1, local_stiff_mat); // 1 is the coefficient beta
     rectangle.local_rhs_vector(rhs_function, fmesh.vertices(), time, local_rhs_vec);
 
-    for (int i = 0; i < rectangle.n_dofs(); ++i)
+    for (unsigned int i = 0; i < rectangle.n_dofs(); ++i)
     {
-      const int dof_i = rectangle.dof(i);
+      const unsigned int dof_i = rectangle.dof(i);
       VecSetValue(system_rhs, dof_i, local_rhs_vec[i], ADD_VALUES);
-      for (int j = 0; j < rectangle.n_dofs(); ++j)
+      for (unsigned int j = 0; j < rectangle.n_dofs(); ++j)
       {
-        const int dof_j = rectangle.dof(j);
+        const unsigned int dof_j = rectangle.dof(j);
         MatSetValue(global_stiff_mat, dof_i, dof_j, local_stiff_mat[i][j], ADD_VALUES);
       }
     }
   }
 
   // free the memory
-  for (int i = 0; i < Rectangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
     delete[] local_stiff_mat[i];
   delete[] local_stiff_mat;
   delete[] local_rhs_vec;
@@ -292,7 +292,7 @@ void check_elliptic_solution_rectangles(bool sparse,
   // impose Dirichlet boundary condition
   // with ones on diagonal
   MatZeroRows(global_stiff_mat, b_nodes.size(), &b_nodes[0], 1., solution, system_rhs); // change the matrix
-  for (int i = 0; i < b_nodes.size(); ++i)
+  for (unsigned int i = 0; i < b_nodes.size(); ++i)
     VecSetValue(system_rhs, b_nodes[i], an_solution.value(fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
 
   // solve the SLAE
@@ -303,7 +303,7 @@ void check_elliptic_solution_rectangles(bool sparse,
   KSPSolve(ksp, system_rhs, solution);
 
   // check solution
-  for (int i = 0; i < fmesh.n_vertices(); ++i)
+  for (unsigned int i = 0; i < fmesh.n_vertices(); ++i)
   {
     Point vert = fmesh.vertex(i);
     VecSetValue(exact_solution, i, an_solution.value(vert, time), INSERT_VALUES);

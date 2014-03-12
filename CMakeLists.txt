@@ -1,15 +1,45 @@
 cmake_minimum_required(VERSION 2.8)
 
 
-set(CMAKE_BUILD_TYPE Debug CACHE STRING "Debug | Release")
-set(DEBUG ON CACHE BOOL "for the internal usage - not the compiler debug options" FORCE)
-set(TESTING ON CACHE BOOL "launch testing procedures")
-set(TEST_DIR ${CMAKE_SOURCE_DIR}/test_dir/ CACHE STRING "directory with files (meshes) for testing")
-set(RESULTS_DIR ${CMAKE_SOURCE_DIR}/results/ CACHE STRING "directory with all results")
+# --- project ---
+#set(CMAKE_CXX_COMPILER mpicxx)
+project(fem2d_acoustic)
+set(PROJECT_LIB_NAME fem2d)
+set(MY_CXX_FLAGS "-std=c++0x -Wall")
+set(PROJECT_OPTIONS "")
+# ---------------
 
-if(CMAKE_BUILD_TYPE MATCHES Release)
-  set(DEBUG OFF CACHE BOOL "for the internal usage - not the compiler debug options" FORCE)
-endif(CMAKE_BUILD_TYPE MATCHES Release)
+
+# --- choosing build type ---
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build: Debug | Release" FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  set(DEBUG ON CACHE BOOL "This option is for internal usage - not the compiler debug options" FORCE)
+  set(PROJECT_OPTIONS "${PROJECT_OPTIONS} DEBUG")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${MY_CXX_FLAGS}")
+  message("build type: Debug")
+  message("compiler flags: ${CMAKE_CXX_FLAGS_DEBUG}")
+elseif(CMAKE_BUILD_TYPE MATCHES Release)
+  set(DEBUG OFF CACHE BOOL "This option is for internal usage - not the compiler debug options" FORCE)
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MY_CXX_FLAGS}")
+  message("build type: Release")
+  message("compiler flags: ${CMAKE_CXX_FLAGS_RELEASE}")
+else(CMAKE_BUILD_TYPE MATCHES Debug)
+  message(FATAL_ERROR "Unknown build type: ${CMAKE_BUILD_TYPE}")
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
+# ---------------------------
+
+
+# --- testing and other setups ---
+set(TESTING ON CACHE BOOL "Launch testing procedures before main work. It may take some time")
+if(TESTING)
+  set(PROJECT_OPTIONS "${PROJECT_OPTIONS} TESTING")
+endif(TESTING)
+set(TEST_DIR ${CMAKE_SOURCE_DIR}/test_dir/ CACHE STRING "Directory with files (meshes) for testing")
+set(RESULTS_DIR ${CMAKE_SOURCE_DIR}/results/ CACHE STRING "Directory with all results")
+# --------------------------------
 
 
 # --- define and connect some important directories ---
@@ -19,13 +49,6 @@ set(LIB_DIR     ${INSTALL_DIR}/lib)
 include_directories(${INCLUDE_DIR})
 link_directories(${LIB_DIR})
 # -----------------------------------------------------
-
-
-# --- project ---
-#set(CMAKE_CXX_COMPILER mpicxx)
-project(fem2d_acoustic)
-add_definitions(-std=c++0x -Wall)
-# ---------------
 
 
 # --- fem library ---
@@ -112,5 +135,7 @@ message("HDR_LIST     " ${HDR_LIST})
 
 
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${HDR_LIST})
+add_library(${PROJECT_LIB_NAME} ${SRC_LIST} ${HDR_LIST})
+
 target_link_libraries(${PROJECT_NAME} ${FEM_LIB} ${Boost_LIBRARIES} ${GTEST_LIB} ${PETSC_LIB} ${MPI_LIB})
 

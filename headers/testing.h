@@ -88,22 +88,22 @@ TEST(FineMesh, read_with_physical_and_partitions)
              Point(1, 1));
 
   // check the number of the mesh vertices
-  EXPECT_EQ(fmesh.n_vertices(), 180);
+  EXPECT_EQ((int)fmesh.n_vertices(), 180);
 
   Point points[] = { Point(0, 0, 0), // first vertex
                      Point(0.3207106781186477, 0.8500000000000002, 0) // last vertex
                    };
 
   // check the first vertex
-  for (int j = 0; j < Point::n_coord; ++j)
+  for (unsigned int j = 0; j < Point::n_coord; ++j)
     EXPECT_DOUBLE_EQ(fmesh.vertex(0).coord(j), points[0].coord(j));
 
   // check the last vertex
-  for (int j = 0; j < Point::n_coord; ++j)
+  for (unsigned int j = 0; j < Point::n_coord; ++j)
     EXPECT_DOUBLE_EQ(fmesh.vertex(fmesh.n_vertices() - 1).coord(j), points[1].coord(j));
 
   // check the number of the mesh triangles
-  EXPECT_EQ(fmesh.n_triangles(), 318);
+  EXPECT_EQ((int)fmesh.n_triangles(), 318);
 
   // some vectors of "ghost cells" for triangles lying on partitions boundaries
   std::vector<unsigned int> gc1(1);
@@ -125,7 +125,7 @@ TEST(FineMesh, read_with_physical_and_partitions)
                          };
 
   // triangle number 1
-  for (int j = 0; j < Triangle::n_vertices; ++j)
+  for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
   {
     // check vertices numbers.
     // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
@@ -133,16 +133,16 @@ TEST(FineMesh, read_with_physical_and_partitions)
   }
   // check material id
   EXPECT_EQ(fmesh.triangle(0).material_id(), triangles[0].material_id());
-  EXPECT_EQ(fmesh.triangle(0).material_id(), 1);
+  EXPECT_EQ((int)fmesh.triangle(0).material_id(), 1);
   // check partition id
   EXPECT_EQ(fmesh.triangle(0).partition_id() + 1, triangles[0].partition_id());
-  EXPECT_EQ(fmesh.triangle(0).partition_id() + 1, 1);
+  EXPECT_EQ((int)fmesh.triangle(0).partition_id() + 1, 1);
   // check the number of ghost cells
   EXPECT_EQ(fmesh.triangle(0).n_ghost_cells(), triangles[0].n_ghost_cells());
-  EXPECT_EQ(fmesh.triangle(0).n_ghost_cells(), 0);
+  EXPECT_EQ((int)fmesh.triangle(0).n_ghost_cells(), 0);
 
   // triangle number 9
-  for (int j = 0; j < Triangle::n_vertices; ++j)
+  for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
   {
     // check vertices numbers.
     // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
@@ -150,22 +150,22 @@ TEST(FineMesh, read_with_physical_and_partitions)
   }
   // check material id
   EXPECT_EQ(fmesh.triangle(8).material_id(), triangles[1].material_id());
-  EXPECT_EQ(fmesh.triangle(8).material_id(), 1);
+  EXPECT_EQ((int)fmesh.triangle(8).material_id(), 1);
   // check partition id
   EXPECT_EQ(fmesh.triangle(8).partition_id() + 1, triangles[1].partition_id());
-  EXPECT_EQ(fmesh.triangle(8).partition_id() + 1, 5);
+  EXPECT_EQ((int)fmesh.triangle(8).partition_id() + 1, 5);
   // check the number of ghost cells
   EXPECT_EQ(fmesh.triangle(8).n_ghost_cells(), triangles[1].n_ghost_cells());
   EXPECT_EQ(fmesh.triangle(8).n_ghost_cells(), gc1.size());
   // check ghost cells
-  for (int g = 0; g < fmesh.triangle(8).n_ghost_cells(); ++g)
+  for (unsigned int g = 0; g < fmesh.triangle(8).n_ghost_cells(); ++g)
   {
     EXPECT_EQ(fmesh.triangle(8).ghost_cell(g) + 1, triangles[1].ghost_cell(g));
     EXPECT_EQ(fmesh.triangle(8).ghost_cell(g) + 1, gc1[g]);
   }
 
   // triangle number 185
-  for (int j = 0; j < Triangle::n_vertices; ++j)
+  for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
   {
     // check vertices numbers.
     // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
@@ -173,22 +173,22 @@ TEST(FineMesh, read_with_physical_and_partitions)
   }
   // check material id
   EXPECT_EQ(fmesh.triangle(184).material_id(), triangles[2].material_id());
-  EXPECT_EQ(fmesh.triangle(184).material_id(), 1);
+  EXPECT_EQ((int)fmesh.triangle(184).material_id(), 1);
   // check partition id
   EXPECT_EQ(fmesh.triangle(184).partition_id() + 1, triangles[2].partition_id());
-  EXPECT_EQ(fmesh.triangle(184).partition_id() + 1, 2);
+  EXPECT_EQ((int)fmesh.triangle(184).partition_id() + 1, 2);
   // check the number of ghost cells
   EXPECT_EQ(fmesh.triangle(184).n_ghost_cells(), triangles[2].n_ghost_cells());
   EXPECT_EQ(fmesh.triangle(184).n_ghost_cells(), gc2.size());
   // check ghost cells
-  for (int g = 0; g < fmesh.triangle(184).n_ghost_cells(); ++g)
+  for (unsigned int g = 0; g < fmesh.triangle(184).n_ghost_cells(); ++g)
   {
     EXPECT_EQ(fmesh.triangle(184).ghost_cell(g) + 1, triangles[2].ghost_cell(g));
     EXPECT_EQ(fmesh.triangle(184).ghost_cell(g) + 1, gc2[g]);
   }
 
   // triangle number 318
-  for (int j = 0; j < Triangle::n_vertices; ++j)
+  for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
   {
     // check vertices numbers.
     // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
@@ -196,15 +196,15 @@ TEST(FineMesh, read_with_physical_and_partitions)
   }
   // check material id
   EXPECT_EQ(fmesh.triangle(317).material_id(), triangles[3].material_id());
-  EXPECT_EQ(fmesh.triangle(317).material_id(), 11);
+  EXPECT_EQ((int)fmesh.triangle(317).material_id(), 11);
   // check partition id
   EXPECT_EQ(fmesh.triangle(317).partition_id() + 1, triangles[3].partition_id());
-  EXPECT_EQ(fmesh.triangle(317).partition_id() + 1, 4);
+  EXPECT_EQ((int)fmesh.triangle(317).partition_id() + 1, 4);
   // check the number of ghost cells
   EXPECT_EQ(fmesh.triangle(317).n_ghost_cells(), triangles[3].n_ghost_cells());
   EXPECT_EQ(fmesh.triangle(317).n_ghost_cells(), gc3.size());
   // check ghost cells
-  for (int g = 0; g < fmesh.triangle(317).n_ghost_cells(); ++g)
+  for (unsigned int g = 0; g < fmesh.triangle(317).n_ghost_cells(); ++g)
   {
     EXPECT_EQ(fmesh.triangle(317).ghost_cell(g) + 1, triangles[3].ghost_cell(g));
     EXPECT_EQ(fmesh.triangle(317).ghost_cell(g) + 1, gc3[g]);
@@ -326,7 +326,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_x_plus_y)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_dense; ++i)
+  for (unsigned int i = 0; i < N_times_tri_dense; ++i)
   {
     check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_1(), an_rhs_function_1(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -338,7 +338,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_x_mult_y)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_dense; ++i)
+  for (unsigned int i = 0; i < N_times_tri_dense; ++i)
   {
     check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_2(), an_rhs_function_2(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -350,7 +350,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_xx_plus_yy)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_dense; ++i)
+  for (unsigned int i = 0; i < N_times_tri_dense; ++i)
   {
     check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_3(), an_rhs_function_3(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -362,7 +362,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_sinx_plus_siny)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_dense; ++i)
+  for (unsigned int i = 0; i < N_times_tri_dense; ++i)
   {
     check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_4(), an_rhs_function_4(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -374,7 +374,7 @@ TEST(EllipticAnalyticSolutionDense, AnalyticFunction_expx)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_dense; ++i)
+  for (unsigned int i = 0; i < N_times_tri_dense; ++i)
   {
     check_elliptic_solution_triangles(0, test_mesh_0_files[i], an_solution_5(), an_rhs_function_5(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -391,7 +391,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_x_plus_y)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_tri_sparse; ++i)
   {
     check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_1(), an_rhs_function_1(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -403,7 +403,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_x_mult_y)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_tri_sparse; ++i)
   {
     check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_2(), an_rhs_function_2(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -415,7 +415,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_xx_plus_yy)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_tri_sparse; ++i)
   {
     check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_3(), an_rhs_function_3(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -427,7 +427,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_sinx_plus_siny)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_tri_sparse; ++i)
   {
     check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_4(), an_rhs_function_4(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -439,7 +439,7 @@ TEST(EllipticAnalyticSolutionSparse, AnalyticFunction_expx)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_tri_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_tri_sparse; ++i)
   {
     check_elliptic_solution_triangles(1, test_mesh_0_files[i], an_solution_5(), an_rhs_function_5(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -461,7 +461,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_x_plus_y)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_dense; ++i)
+  for (unsigned int i = 0; i < N_times_rec_dense; ++i)
   {
     check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_1(), an_rhs_function_1(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -473,7 +473,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_x_mult_y)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_dense; ++i)
+  for (unsigned int i = 0; i < N_times_rec_dense; ++i)
   {
     check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_2(), an_rhs_function_2(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -485,7 +485,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_xx_plus_yy)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_dense; ++i)
+  for (unsigned int i = 0; i < N_times_rec_dense; ++i)
   {
     check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_3(), an_rhs_function_3(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -497,7 +497,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_sinx_plus_siny)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_dense; ++i)
+  for (unsigned int i = 0; i < N_times_rec_dense; ++i)
   {
     check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_4(), an_rhs_function_4(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -509,7 +509,7 @@ TEST(EllipticAnalyticSolutionRectanglesDense, AnalyticFunction_expx)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_dense; ++i)
+  for (unsigned int i = 0; i < N_times_rec_dense; ++i)
   {
     check_elliptic_solution_rectangles(0, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_5(), an_rhs_function_5(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -526,7 +526,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_x_plus_y)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_rec_sparse; ++i)
   {
     check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_1(), an_rhs_function_1(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -538,7 +538,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_x_mult_y)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_rec_sparse; ++i)
   {
     check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_2(), an_rhs_function_2(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -550,7 +550,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_xx_plus_yy)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_rec_sparse; ++i)
   {
     check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_3(), an_rhs_function_3(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -562,7 +562,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_sinx_plus_siny)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_rec_sparse; ++i)
   {
     check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_4(), an_rhs_function_4(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;
@@ -574,7 +574,7 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_expx)
 {
   double cur_error, prev_error = -1;
   int cur_n_cells, prev_n_cells = 0;
-  for (int i = 0; i < N_times_rec_sparse; ++i)
+  for (unsigned int i = 0; i < N_times_rec_sparse; ++i)
   {
     check_elliptic_solution_rectangles(1, pow(2, i)*n_beg, pow(2, i)*n_beg, an_solution_5(), an_rhs_function_5(), cur_error, cur_n_cells, prev_error, prev_n_cells);
     prev_error = cur_error;

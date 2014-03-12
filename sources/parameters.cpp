@@ -27,6 +27,8 @@ void Parameters::default_parameters()
   USE_LAYERS_FILE = false; // by default we use COEF_*_VALUES
   CREATE_BIN_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
   CREATE_AVE_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
+  H_BIN_LAYER_PERCENT = 1; // thickness of one layer in case of binary layers
+  LAYERS_FILE_SUFFIX = ""; // there is no suffix by default
 
   RES_TOP_DIR = "../results/"; // this top level directory containing all results usually exists on the same level as 'build', 'sources', 'headers' directories
   RES_DIR = ""; // should be changed and based on some parameters
@@ -63,6 +65,7 @@ void Parameters::default_parameters()
   PRINT_INFO = 0; // don't print an information to console on each time step
   VTU_STEP = 1; // print the .vtu file on each time step
   SOL_STEP = 1; // save the .dat file with solution on each time step
+  EXPORT_COEFFICIENTS = 0; // there is no export by default
 }
 
 
@@ -74,12 +77,15 @@ void Parameters::read_from_command_line(int argc, char **argv)
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "produce help message")
+    ("options", "show project options")
     ("meshfile", po::value<std::string>(),  std::string("name of mesh file (" + MESH_FILE + ")").c_str())
     ("meshdir",  po::value<std::string>(),  std::string("path to a directory with meshes (" + MESH_DIR + ")").c_str())
     ("ladir",    po::value<std::string>(),  std::string("path to a directory with layers files (" + LAYERS_DIR + ")").c_str())
     ("lafile",   po::value<std::string>(),  std::string("name of file with parameters of layers (" + LAYERS_FILE + ")").c_str())
+    ("lasuf",    po::value<std::string>(),  std::string("suffix to distinguish several layers files when we create them (" + LAYERS_FILE_SUFFIX + ")").c_str())
     ("lacrebin", po::value<bool>(),         std::string("create (1) or don't (0) a new binary layers file (" + d2s(CREATE_BIN_LAYERS_FILE) + ")").c_str())
     ("lacreave", po::value<bool>(),         std::string("create (1) or don't (0) a new average layers file (" + d2s(CREATE_AVE_LAYERS_FILE) + ")").c_str())
+    ("hlayer",   po::value<double>(),       std::string("thickness of one binary layer in percent (" + d2s(H_BIN_LAYER_PERCENT) + ")").c_str())
     ("scheme",   po::value<std::string>(),  std::string("time scheme (" + time_scheme + ")").c_str())
     ("tend",     po::value<double>(),       std::string("time ending (" + d2s(TIME_END) + ")").c_str())
     ("tstep",    po::value<double>(),       std::string("time step (" + d2s(TIME_STEP) + ")").c_str())
@@ -95,6 +101,7 @@ void Parameters::read_from_command_line(int argc, char **argv)
     ("vtu",      po::value<bool>(),         std::string("whether we need to print .vtu files (" + d2s(PRINT_VTU) + ")").c_str())
     ("sol",      po::value<bool>(),         std::string("whether we need to save .dat files with solutions (" + d2s(SAVE_SOL) + ")").c_str())
     ("inf",      po::value<bool>(),         std::string("whether we need to print some info during calculations (" + d2s(PRINT_INFO) + ")").c_str())
+    ("expcoef",  po::value<bool>(),         std::string("whether we need to export coeff-s distribution with results (" + d2s(EXPORT_COEFFICIENTS) + ")").c_str())
     ("vtu_step", po::value<unsigned int>(), std::string("if we need to print .vtu files then how often. every (vtu_step)-th file will be printed (" + d2s(VTU_STEP) + ")").c_str())
     ("sol_step", po::value<unsigned int>(), std::string("if we need to save .dat files then how often. every (sol_step)-th file will be saved (" + d2s(SOL_STEP) + ")").c_str())
     ("x1",       po::value<double>(),       std::string("X_END (" + d2s(X_END) + ")").c_str())
@@ -116,6 +123,12 @@ void Parameters::read_from_command_line(int argc, char **argv)
   if (vm.count("help"))
   {
     std::cout << desc << "\n";
+    exit(0);
+  }
+
+  if (vm.count("options"))
+  {
+    std::cout << "project options are: " << PROJECT_OPTIONS << "\n";
     exit(0);
   }
 
@@ -144,6 +157,14 @@ void Parameters::read_from_command_line(int argc, char **argv)
     CREATE_BIN_LAYERS_FILE = vm["lacrebin"].as<bool>();
   if (vm.count("lacreave"))
     CREATE_AVE_LAYERS_FILE = vm["lacreave"].as<bool>();
+  if (vm.count("hlayer"))
+    H_BIN_LAYER_PERCENT = vm["hlayer"].as<double>();
+
+  if (CREATE_BIN_LAYERS_FILE || CREATE_AVE_LAYERS_FILE)
+  {
+    if (vm.count("lasuf"))
+      LAYERS_FILE_SUFFIX = vm["lasuf"].as<std::string>();
+  }
 
   if (vm.count("scheme"))
   {
@@ -167,7 +188,7 @@ void Parameters::read_from_command_line(int argc, char **argv)
     N_TIME_STEPS = vm["nt"].as<unsigned int>();
 
   if (!vm.count("nt"))
-    N_TIME_STEPS = int((TIME_END - TIME_BEG) / TIME_STEP);
+    N_TIME_STEPS = unsigned((TIME_END - TIME_BEG) / TIME_STEP);
   if (!vm.count("tstep"))
     TIME_STEP = (TIME_END - TIME_BEG) / N_TIME_STEPS;
   if (!vm.count("tend"))
@@ -191,6 +212,8 @@ void Parameters::read_from_command_line(int argc, char **argv)
     SAVE_SOL = vm["sol"].as<bool>();
   if (vm.count("inf"))
     PRINT_INFO = vm["inf"].as<bool>();
+  if (vm.count("expcoef"))
+    EXPORT_COEFFICIENTS = vm["expcoef"].as<bool>();
   if (vm.count("vtu_step"))
   {
     VTU_STEP = vm["vtu_step"].as<unsigned int>();
@@ -245,7 +268,7 @@ void Parameters::read_from_command_line(int argc, char **argv)
   if (vm.count("b2val"))
     COEF_B_VALUES[1] = vm["b2val"].as<double>();
 
-  for (int i = 0; i < N_SUBDOMAINS; ++i)
+  for (unsigned int i = 0; i < N_SUBDOMAINS; ++i)
     require(COEF_A_VALUES[i] > 0 && COEF_B_VALUES[i] > 0, "Coefficients must be positive");
 
 //  for (int i = 1; i <= N_SUBDOMAINS; ++i)
@@ -322,11 +345,12 @@ std::string Parameters::print() const
   str += "n_fine_x = " + d2s(N_FINE_X) + "\n";
   str += "n_fine_y = " + d2s(N_FINE_Y) + "\n";
   str += "layers_file = " + LAYERS_FILE + "\n";
+  str += "h_bin_layer = " + d2s(H_BIN_LAYER_PERCENT) + "\n";
 
   str += "number of subdomains = " + d2s(N_SUBDOMAINS) + "\n";
 
   std::string coef_a = "", coef_b = "";
-  for (int i = 0; i < N_SUBDOMAINS; ++i)
+  for (unsigned int i = 0; i < N_SUBDOMAINS; ++i)
   {
     coef_a += (COEF_A_FILES[i] == "" ? d2s(COEF_A_VALUES[i]) : COEF_A_FILES[i]) + ", ";
     coef_b += (COEF_B_FILES[i] == "" ? d2s(COEF_B_VALUES[i]) : COEF_B_FILES[i]) + ", ";
@@ -353,7 +377,7 @@ void Parameters::generate_paths()
   LAYERS_FILE = LAYERS_DIR + "/" + LAYERS_FILE; // full path to the layers file
 
   std::string coef_a = "", coef_b = "";
-  for (int i = 0; i < N_SUBDOMAINS; ++i)
+  for (unsigned int i = 0; i < N_SUBDOMAINS; ++i)
   {
     coef_a += (COEF_A_FILES[i] == "" ? d2s(COEF_A_VALUES[i]) : stem(COEF_A_FILES[i]));
     coef_b += (COEF_B_FILES[i] == "" ? d2s(COEF_B_VALUES[i]) : stem(COEF_B_FILES[i]));

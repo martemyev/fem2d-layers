@@ -3,8 +3,8 @@
 
 double AnalyticSolution::value(const Point &p, const double t) const
 {
-  const double x = p.coord(0);
-  const double y = p.coord(1);
+  //const double x = p.coord(0);
+  //const double y = p.coord(1);
   return 0;
 }
 
@@ -53,8 +53,8 @@ double an_solution_1::value(const Point &p, const double t) const
 }
 double an_rhs_function_1::value(const Point &p, const double t) const
 {
-  const double x = p.coord(0);
-  const double y = p.coord(1);
+//  const double x = p.coord(0);
+//  const double y = p.coord(1);
   return 0;
 }
 
@@ -68,8 +68,8 @@ double an_solution_2::value(const Point &p, const double t) const
 }
 double an_rhs_function_2::value(const Point &p, const double t) const
 {
-  const double x = p.coord(0);
-  const double y = p.coord(1);
+//  const double x = p.coord(0);
+//  const double y = p.coord(1);
   return 0;
 }
 
@@ -83,8 +83,8 @@ double an_solution_3::value(const Point &p, const double t) const
 }
 double an_rhs_function_3::value(const Point &p, const double t) const
 {
-  const double x = p.coord(0);
-  const double y = p.coord(1);
+//  const double x = p.coord(0);
+//  const double y = p.coord(1);
   return -4;
 }
 
@@ -108,12 +108,12 @@ double an_rhs_function_4::value(const Point &p, const double t) const
 double an_solution_5::value(const Point &p, const double t) const
 {
   const double x = p.coord(0);
-  const double y = p.coord(1);
+//  const double y = p.coord(1);
   return exp(x);
 }
 double an_rhs_function_5::value(const Point &p, const double t) const
 {
   const double x = p.coord(0);
-  const double y = p.coord(1);
+//  const double y = p.coord(1);
   return -exp(x);
 }

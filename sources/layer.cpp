@@ -56,8 +56,9 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
   const double Hx = _max_point.coord(0) - _min_point.coord(0); // the length (x-direction) of the domain
 
   // define the limits that the layer occupies when it is distributed horizontally
-  double y_bottom, y_top = _min_point.coord(1);
-  for (int i = 0; i < _number + 1; ++i)
+  double y_bottom = _min_point.coord(1) - 1; // it's wrong by default
+  double y_top = _min_point.coord(1);
+  for (unsigned int i = 0; i < _number + 1; ++i)
   {
     y_bottom = y_top;
     if (i == n_layers - 1) // if it is the last layer, we don't calculate the limit to eliminate the error
@@ -65,6 +66,7 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
     else
       y_top = y_bottom + 0.01*thickness_percent[i]*Hy;
   }
+  expect(y_bottom >= _min_point.coord(1), "Please check y_bottom. It's wrong.");
 
   // now we define y-coordinates of the real layer vertices (taking the angle into account)
   if (fabs(_angle) < FLOAT_NUMBERS_EQUALITY_TOLERANCE) // if angle is zero, there is no stretching, and transformation is not required
@@ -153,7 +155,7 @@ bool Layer::contains_element(const Rectangle &cell, const std::vector<Point> &po
   // we think that a cell belongs to a layer if a center of the cell belongs to the layer
   double xc = 0., yc = 0.; // center of the cell
 
-  for (int i = 0; i < cell.n_vertices; ++i)
+  for (unsigned int i = 0; i < cell.n_vertices; ++i)
   {
     xc += points[cell.vertex(i)].coord(0);
     yc += points[cell.vertex(i)].coord(1);
