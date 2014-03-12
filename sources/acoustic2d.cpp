@@ -830,3 +830,29 @@ void Acoustic2D::create_ave_layers_file() const
 
   out.close();
 }
+
+
+
+void Acoustic2D::export_coefficients_distribution(const std::string &filename) const
+{
+  // since a part of software that will use this coefficients distribution
+  // is based on suggestion that coefficients are vertex-wise distributed
+  // instead of cell-wise distribution accepted in this code,
+  // we need to convert our array of coefficients to another one.
+  // the rule of conversion is quite simple.
+  // assume we have a vertex v4, and we need to define the value
+  // of the suitable coefficient at it.
+  // v6 --- v7 --- v8
+  // |  c2  |  c3  |
+  // v3 --- v4 --- v5
+  // |  c0  |  c1  |
+  // v0 --- v1 --- v2
+  // vi (i=0,..,8) - vertices
+  // ci (i=0,..,3) - coefficients
+  //
+  // we do the following averaging
+  // c(v4) = 1/4 * (c0 + c1 + c2 + c3)
+  // that's it.
+
+
+}

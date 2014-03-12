@@ -84,6 +84,8 @@ private:
   void coefficients_initialization();
   void create_bin_layers_file() const;
   void create_ave_layers_file() const;
+
+  void export_coefficients_distribution(const std::string &filename) const;
 };
 
 
