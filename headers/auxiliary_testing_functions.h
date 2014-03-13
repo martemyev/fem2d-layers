@@ -25,20 +25,20 @@ const double ksp_dtol = 1e+5;
 const int ksp_maxits  = 10000;
 
 
-void compare_points(const FineMesh &fmesh, unsigned int n_points, Point points[])
+void compare_points(const fem::FineMesh &fmesh, unsigned int n_points, fem::Point points[])
 {
   // check the number of vertices
   EXPECT_EQ(fmesh.n_vertices(), n_points);
 
   // check the coordinates
   for (unsigned int i = 0; i < fmesh.n_vertices(); ++i)
-    for (unsigned int j = 0; j < Point::n_coord; ++j)
+    for (unsigned int j = 0; j < fem::Point::n_coord; ++j)
       EXPECT_DOUBLE_EQ(fmesh.vertex(i).coord(j), points[i].coord(j));
 }
 
 
 
-void compare_triangles(const FineMesh &fmesh, unsigned int n_triangles, Triangle triangles[], Point points[])
+void compare_triangles(const fem::FineMesh &fmesh, unsigned int n_triangles, fem::Triangle triangles[], fem::Point points[])
 {
   // check the number of triangles
   EXPECT_EQ(fmesh.n_triangles(), n_triangles);
@@ -46,14 +46,14 @@ void compare_triangles(const FineMesh &fmesh, unsigned int n_triangles, Triangle
   // check triangles themselves
   for (unsigned int i = 0; i < fmesh.n_triangles(); ++i)
   {
-    for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
+    for (unsigned int j = 0; j < fem::Triangle::n_vertices; ++j)
     {
       // check vertices numbers.
       // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
       EXPECT_EQ(fmesh.triangle(i).vertex(j) + 1, triangles[i].vertex(j));
 
       // check vertices coordinates (once again)
-      for (unsigned int k = 0; k < Point::n_coord; ++k)
+      for (unsigned int k = 0; k < fem::Point::n_coord; ++k)
         EXPECT_DOUBLE_EQ(fmesh.vertex(fmesh.triangle(i).vertex(j)).coord(k), points[triangles[i].vertex(j) - 1].coord(k));
     }
   }
@@ -61,20 +61,20 @@ void compare_triangles(const FineMesh &fmesh, unsigned int n_triangles, Triangle
 
 
 
-void check_dof_handler(const DoFHandler &dof_handler, const FineMesh &fmesh, unsigned int fe_order)
+void check_dof_handler(const fem::DoFHandler &dof_handler, const fem::FineMesh &fmesh, unsigned int fe_order)
 {
   if (fe_order == 1)
   {
     EXPECT_EQ(dof_handler.n_dofs(), fmesh.n_vertices());
     for (unsigned int i = 0; i < dof_handler.n_dofs(); ++i)
-      for (unsigned int j = 0; j < Point::n_coord; ++j)
+      for (unsigned int j = 0; j < fem::Point::n_coord; ++j)
         EXPECT_DOUBLE_EQ(dof_handler.dof(i).coord(j), fmesh.vertex(i).coord(j));
   }
 }
 
 
 
-void check_csr_pattern(const CSRPattern &csr_pattern, unsigned int n_points, unsigned int *row, unsigned int *col)
+void check_csr_pattern(const fem::CSRPattern &csr_pattern, unsigned int n_points, unsigned int *row, unsigned int *col)
 {
   EXPECT_EQ(csr_pattern.order(), n_points);
 
@@ -90,26 +90,26 @@ void check_csr_pattern(const CSRPattern &csr_pattern, unsigned int n_points, uns
 
 void check_elliptic_solution_triangles(bool sparse,
                                        const std::string &meshfile,
-                                       const Function &an_solution,
-                                       const Function &rhs_function,
+                                       const fem::Function &an_solution,
+                                       const fem::Function &rhs_function,
                                        double &current_rel_error,
                                        int &current_n_triangles,
                                        double prev_rel_error = -1,
                                        int prev_n_triangles = 0)
 {
-  FineMesh fmesh;
+  fem::FineMesh fmesh;
   fmesh.read(TEST_DIR + "/" + meshfile,
-             Point(0, 0),
-             Point(1, 1));
+             fem::Point(0, 0),
+             fem::Point(1, 1));
 
-  FiniteElement fe(1);
+  fem::FiniteElement fe(1);
 
-  DoFHandler dof_handler(&fmesh);
-  dof_handler.distribute_dofs(fe, CG);
+  fem::DoFHandler dof_handler(&fmesh);
+  dof_handler.distribute_dofs(fe, fem::CG);
 
-  CSRPattern csr_pattern;
+  fem::CSRPattern csr_pattern;
   if (sparse)
-    csr_pattern.make_sparse_format(dof_handler, CG);
+    csr_pattern.make_sparse_format(dof_handler, fem::CG);
 
   // create vectors
   Vec system_rhs; // right hand side vector
@@ -129,17 +129,17 @@ void check_elliptic_solution_triangles(bool sparse,
     MatCreateDense(PETSC_COMM_WORLD, dof_handler.n_dofs(), dof_handler.n_dofs(), dof_handler.n_dofs(), dof_handler.n_dofs(), NULL, &global_stiff_mat);
 
   // allocate the memory for local matrices and vectors
-  double **local_stiff_mat = new double*[Triangle::n_dofs_first];
-  double *local_rhs_vec = new double[Triangle::n_dofs_first];
-  for (unsigned int i = 0; i < Triangle::n_dofs_first; ++i)
-    local_stiff_mat[i] = new double[Triangle::n_dofs_first];
+  double **local_stiff_mat = new double*[fem::Triangle::n_dofs_first];
+  double *local_rhs_vec = new double[fem::Triangle::n_dofs_first];
+  for (unsigned int i = 0; i < fem::Triangle::n_dofs_first; ++i)
+    local_stiff_mat[i] = new double[fem::Triangle::n_dofs_first];
 
   const double time = 0.; // because it's elliptic problem
 
   // assemble the matrix
   for (unsigned int cell = 0; cell < fmesh.n_triangles(); ++cell)
   {
-    Triangle triangle = fmesh.triangle(cell);
+    fem::Triangle triangle = fmesh.triangle(cell);
     triangle.local_stiffness_matrix(1, local_stiff_mat); // 1 is the coefficient beta
     triangle.local_rhs_vector(rhs_function, fmesh.vertices(), time, local_rhs_vec);
 
@@ -156,7 +156,7 @@ void check_elliptic_solution_triangles(bool sparse,
   }
 
   // free the memory
-  for (unsigned int i = 0; i < Triangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < fem::Triangle::n_dofs_first; ++i)
     delete[] local_stiff_mat[i];
   delete[] local_stiff_mat;
   delete[] local_rhs_vec;
@@ -183,12 +183,12 @@ void check_elliptic_solution_triangles(bool sparse,
   // check solution
   for (unsigned int i = 0; i < fmesh.n_vertices(); ++i)
   {
-    Point vert = fmesh.vertex(i);
+    fem::Point vert = fmesh.vertex(i);
     VecSetValue(exact_solution, i, an_solution.value(vert, time), INSERT_VALUES);
   }
 
   current_n_triangles = fmesh.n_triangles(); // the number of triangles of fine mesh
-  current_rel_error = rel_error(solution, exact_solution); // relative error
+  current_rel_error = fem::math::rel_error(solution, exact_solution); // relative error
   std::cout << "relative error = " << d2s(current_rel_error, true)
             << " error reduction = " << (fabs(prev_rel_error + 1) < 1e-12 ? "-" : d2s(prev_rel_error / current_rel_error, true))
             << " mesh size reduction = " << (prev_n_triangles == 0 ? "-" : d2s(current_n_triangles / prev_n_triangles))
@@ -209,8 +209,8 @@ void check_elliptic_solution_triangles(bool sparse,
 void check_elliptic_solution_rectangles(bool sparse,
                                         unsigned int N_FINE_X,
                                         unsigned int N_FINE_Y,
-                                        const Function &an_solution,
-                                        const Function &rhs_function,
+                                        const fem::Function &an_solution,
+                                        const fem::Function &rhs_function,
                                         double &current_rel_error,
                                         int &current_n_rectangles,
                                         double prev_rel_error = -1,
@@ -221,17 +221,17 @@ void check_elliptic_solution_rectangles(bool sparse,
   const double Y_BEG = 0;
   const double Y_END = 1;
 
-  FineMesh fmesh;
+  fem::FineMesh fmesh;
   fmesh.create_rectangular_grid(X_BEG, X_END, Y_BEG, Y_END, N_FINE_X, N_FINE_Y);
 
-  FiniteElement fe(1);
+  fem::FiniteElement fe(1);
 
-  DoFHandler dof_handler(&fmesh);
-  dof_handler.distribute_dofs(fe, CG);
+  fem::DoFHandler dof_handler(&fmesh);
+  dof_handler.distribute_dofs(fe, fem::CG);
 
-  CSRPattern csr_pattern;
+  fem::CSRPattern csr_pattern;
   if (sparse)
-    csr_pattern.make_sparse_format(dof_handler, CG);
+    csr_pattern.make_sparse_format(dof_handler, fem::CG);
 
   // create vectors
   Vec system_rhs; // right hand side vector
@@ -251,17 +251,17 @@ void check_elliptic_solution_rectangles(bool sparse,
     MatCreateDense(PETSC_COMM_WORLD, dof_handler.n_dofs(), dof_handler.n_dofs(), dof_handler.n_dofs(), dof_handler.n_dofs(), NULL, &global_stiff_mat);
 
   // allocate the memory for local matrices and vectors
-  double **local_stiff_mat = new double*[Rectangle::n_dofs_first];
-  double *local_rhs_vec = new double[Rectangle::n_dofs_first];
-  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
-    local_stiff_mat[i] = new double[Rectangle::n_dofs_first];
+  double **local_stiff_mat = new double*[fem::Rectangle::n_dofs_first];
+  double *local_rhs_vec = new double[fem::Rectangle::n_dofs_first];
+  for (unsigned int i = 0; i < fem::Rectangle::n_dofs_first; ++i)
+    local_stiff_mat[i] = new double[fem::Rectangle::n_dofs_first];
 
   const double time = 0.; // because it's elliptic problem
 
   // assemble the matrix
   for (unsigned int cell = 0; cell < fmesh.n_rectangles(); ++cell)
   {
-    Rectangle rectangle = fmesh.rectangle(cell);
+    fem::Rectangle rectangle = fmesh.rectangle(cell);
     rectangle.local_stiffness_matrix(1, local_stiff_mat); // 1 is the coefficient beta
     rectangle.local_rhs_vector(rhs_function, fmesh.vertices(), time, local_rhs_vec);
 
@@ -278,7 +278,7 @@ void check_elliptic_solution_rectangles(bool sparse,
   }
 
   // free the memory
-  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < fem::Rectangle::n_dofs_first; ++i)
     delete[] local_stiff_mat[i];
   delete[] local_stiff_mat;
   delete[] local_rhs_vec;
@@ -305,12 +305,12 @@ void check_elliptic_solution_rectangles(bool sparse,
   // check solution
   for (unsigned int i = 0; i < fmesh.n_vertices(); ++i)
   {
-    Point vert = fmesh.vertex(i);
+    fem::Point vert = fmesh.vertex(i);
     VecSetValue(exact_solution, i, an_solution.value(vert, time), INSERT_VALUES);
   }
 
   current_n_rectangles = fmesh.n_rectangles(); // the number of rectangles of fine mesh
-  current_rel_error = rel_error(solution, exact_solution); // relative error
+  current_rel_error = fem::math::rel_error(solution, exact_solution); // relative error
   std::cout << "relative error = " << d2s(current_rel_error, true)
             << " error reduction = " << (fabs(prev_rel_error + 1) < 1e-12 ? "-" : d2s(prev_rel_error / current_rel_error, true))
             << " mesh size reduction = " << (prev_n_rectangles == 0 ? "-" : d2s(current_n_rectangles / prev_n_rectangles))

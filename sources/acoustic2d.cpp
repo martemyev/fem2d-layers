@@ -190,12 +190,12 @@ void Acoustic2D::solve_rectangles()
   MatCreateSeqAIJ(PETSC_COMM_WORLD, csr_pattern.order(), csr_pattern.order(), 0, csr_pattern.nnz(), &_global_stiff_mat);
 
   // allocate the memory for local matrices and vectors
-  double **local_mass_mat = new double*[Rectangle::n_dofs_first];
-  double **local_stiff_mat = new double*[Rectangle::n_dofs_first];
-  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
+  double **local_mass_mat = new double*[fem::Rectangle::n_dofs_first];
+  double **local_stiff_mat = new double*[fem::Rectangle::n_dofs_first];
+  for (unsigned int i = 0; i < fem::Rectangle::n_dofs_first; ++i)
   {
-    local_mass_mat[i] = new double[Rectangle::n_dofs_first];
-    local_stiff_mat[i] = new double[Rectangle::n_dofs_first];
+    local_mass_mat[i] = new double[fem::Rectangle::n_dofs_first];
+    local_stiff_mat[i] = new double[fem::Rectangle::n_dofs_first];
   }
 
   // fill up the array of coefficients alpha and beta
@@ -204,26 +204,37 @@ void Acoustic2D::solve_rectangles()
   if (_param->CREATE_AVE_LAYERS_FILE)
     create_ave_layers_file();
 
-  if (_param->USE_LAYERS_FILE)
-    coefficients_initialization();
-  else
+  if (_param->COEF_SAVED) // if coefficients have been saved in a file,
   {
-    _coef_alpha.resize(_fmesh.n_rectangles(), _param->COEF_A_VALUES[0]);
-    _coef_beta.resize(_fmesh.n_rectangles(), _param->COEF_B_VALUES[0]);
-    for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
+    import_coefficients(_param->COEF_FILE); // we just read them and convert from vertex-wise distribution to cell-wise one
+  }
+  else // if the coefficients haven't been saved before, we distribute them according to layers file or other ways
+  {
+    if (_param->USE_LAYERS_FILE)
+      coefficients_initialization();
+    else
     {
-      if ((int)_fmesh.rectangle(cell).material_id() == _param->INCL_DOMAIN)
+      _coef_alpha.resize(_fmesh.n_rectangles(), _param->COEF_A_VALUES[0]);
+      _coef_beta.resize(_fmesh.n_rectangles(), _param->COEF_B_VALUES[0]);
+      for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
       {
-        _coef_alpha[cell] = _param->COEF_A_VALUES[1]; // coefficient in the inclusion
-        _coef_beta[cell]  = _param->COEF_B_VALUES[1];  // coefficient in the inclusion
+        if ((int)_fmesh.rectangle(cell).material_id() == _param->INCL_DOMAIN)
+        {
+          _coef_alpha[cell] = _param->COEF_A_VALUES[1]; // coefficient in the inclusion
+          _coef_beta[cell]  = _param->COEF_B_VALUES[1];  // coefficient in the inclusion
+        }
       }
     }
+    if (_param->SAVE_COEF) // if we need to save coefficients after distribution,
+      export_coefficients(_param->COEF_FILE); // we convert them to vertex-wise format and export them into a file
   }
+
+
 
   // assemble the matrices
   for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
   {
-    const Rectangle rectangle = _fmesh.rectangle(cell);
+    const fem::Rectangle rectangle = _fmesh.rectangle(cell);
     rectangle.local_mass_matrix(_coef_alpha[cell], local_mass_mat);
     rectangle.local_stiffness_matrix(_coef_beta[cell], local_stiff_mat);
 
@@ -240,7 +251,7 @@ void Acoustic2D::solve_rectangles()
   }
 
   // free the memory
-  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < fem::Rectangle::n_dofs_first; ++i)
   {
     delete[] local_mass_mat[i];
     delete[] local_stiff_mat[i];
@@ -460,7 +471,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
   KSPSetOperators(ksp, system_mat, system_mat, SAME_PRECONDITIONER);
   KSPSetTolerances(ksp, 1e-8, 1e-30, 1e+5, 10000);
 
-  double *local_rhs_vec = new double[Rectangle::n_dofs_first];
+  double *local_rhs_vec = new double[fem::Rectangle::n_dofs_first];
 
   require(_param->N_TIME_STEPS > 1, "There is no time steps to perform: n_time_steps = " + d2s(_param->N_TIME_STEPS));
 
@@ -477,7 +488,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     const RHSFunction rhs_function(*_param);
     for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
     {
-      Rectangle rectangle = _fmesh.rectangle(cell);
+      fem::Rectangle rectangle = _fmesh.rectangle(cell);
       rectangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, local_rhs_vec); // rhs function on the previous time step
       for (unsigned int i = 0; i < rectangle.n_dofs(); ++i)
       {
@@ -573,7 +584,7 @@ void Acoustic2D::coefficients_initialization()
   std::ifstream in(_param->LAYERS_FILE);
   require(in, "File " + _param->LAYERS_FILE + " cannot be opened");
 
-  const std::vector<Rectangle> &cells = _fmesh.rectangles(); // all mesh cells
+  const std::vector<fem::Rectangle> &cells = _fmesh.rectangles(); // all mesh cells
   _coef_alpha.resize(cells.size(), 0); // coefficient alpha in each cell is 0 by default
   _coef_beta.resize(cells.size(),  0); // coefficient beta in each cell is 0 by default
 
@@ -612,7 +623,7 @@ void Acoustic2D::coefficients_initialization()
 
   const double right_angle = 90.; // right angle in degrees
   require(fabs(layer_angle) < right_angle, "Angle doesn't belong to correct range: (-90, 90), its value : " + d2s(layer_angle));
-  require(fabs(fabs(layer_angle) - right_angle) > FLOAT_NUMBERS_EQUALITY_TOLERANCE, "Angle is equal to right angle (90), what is prohibited");
+  require(fabs(fabs(layer_angle) - right_angle) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE, "Angle is equal to right angle (90), what is prohibited");
 
   require(n_layers > 0, "The number of layers is 0");
   std::vector<double> layer_h_percent(n_layers); // the thicknesses of the layers in percents
@@ -622,18 +633,18 @@ void Acoustic2D::coefficients_initialization()
   const double x0 = _fmesh.min_coord().coord(0);
   const double x1 = _fmesh.max_coord().coord(0);
   double y0, y1;
-  if (fabs(block_beg[bl]) < FLOAT_NUMBERS_EQUALITY_TOLERANCE) // block_beg is 0
+  if (fabs(block_beg[bl]) < fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE) // block_beg is 0
     y0 = _fmesh.min_coord().coord(1);
   else
     y0 = _fmesh.min_coord().coord(1) + 0.01 * block_beg[bl] * Hy;
-  if (fabs(block_end[bl] - 100.) < FLOAT_NUMBERS_EQUALITY_TOLERANCE) // block_end is 100
+  if (fabs(block_end[bl] - 100.) < fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE) // block_end is 100
     y1 = _fmesh.max_coord().coord(1);
   else
     y1 = _fmesh.min_coord().coord(1) + 0.01 * block_end[bl] * Hy;
 
   // block limits
-  const Point min_block_point(x0, y0);
-  const Point max_block_point(x1, y1);
+  const fem::Point min_block_point(x0, y0);
+  const fem::Point max_block_point(x1, y1);
 
   // read the info abount thickness and coefficients of each layer
   double total_h_percent = 0.; // in the end of the day total_h should be 100 (because it's in percent). in other case those thicknesses don't make sense
@@ -645,7 +656,7 @@ void Acoustic2D::coefficients_initialization()
        >> layer_coef_beta[i];
     total_h_percent += layer_h_percent[i];
   }
-  require(fabs(total_h_percent - 100.) < FLOAT_NUMBERS_EQUALITY_REDUCED_TOLERANCE,
+  require(fabs(total_h_percent - 100.) < fem::math::FLOAT_NUMBERS_EQUALITY_REDUCED_TOLERANCE,
           "The total thickness of all layers is not 100%. It is " + d2s(total_h_percent, true, 14));
 
   // block initialization
@@ -661,7 +672,7 @@ void Acoustic2D::coefficients_initialization()
   double total_block_h = 0.; // in percent
   for (unsigned int i = 0; i < n_blocks; ++i)
     total_block_h += block_end[i] - block_beg[i];
-  require(fabs(total_block_h - 100.) < FLOAT_NUMBERS_EQUALITY_TOLERANCE,
+  require(fabs(total_block_h - 100.) < fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE,
           "The blocks either intersect each other or don't fill whole domain");
 
 
@@ -686,7 +697,7 @@ void Acoustic2D::coefficients_initialization()
 
 void Acoustic2D::create_bin_layers_file() const
 {
-  std::string fname = _param->LAYERS_DIR + "/lay_3_bin_" + d2s(_param->H_BIN_LAYER_PERCENT) + "_" + _param->LAYERS_FILE_SUFFIX + ".dat";
+  std::string fname = _param->LAYERS_DIR + "/lay_bin_" + d2s(_param->H_BIN_LAYER_PERCENT) + "_" + _param->LAYERS_FILE_SUFFIX + ".dat";
 
   std::cout << "\ncreation of binary layers file: " << fname << std::endl;
   std::ofstream out(fname.c_str());
@@ -702,13 +713,13 @@ void Acoustic2D::create_bin_layers_file() const
   const unsigned int block_end[] = {0, 0, 100}; //{ 20, 100, 80 };
   //const unsigned int n_layers[]  = { 1, 1, 20 };
 
-  if (fabs(block_end[0] - block_beg[0]) > FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  if (fabs(block_end[0] - block_beg[0]) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
   {
     out << block_beg[0] << " " << block_end[0] << " 1 0\n";
     out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
   }
 
-  if (fabs(block_end[1] - block_beg[1]) > FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  if (fabs(block_end[1] - block_beg[1]) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
   {
     out << block_beg[1] << " " << block_end[1] << " 1 0\n";
     out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
@@ -754,7 +765,7 @@ void Acoustic2D::create_bin_layers_file() const
 
 void Acoustic2D::create_ave_layers_file() const
 {
-  std::string fname = _param->LAYERS_DIR + "/lay_3_ave_" + d2s(_param->H_BIN_LAYER_PERCENT) + "_" + _param->LAYERS_FILE_SUFFIX + ".dat";
+  std::string fname = _param->LAYERS_DIR + "/lay_ave_" + d2s(_param->H_BIN_LAYER_PERCENT) + "_" + _param->LAYERS_FILE_SUFFIX + ".dat";
 
   std::cout << "\ncreation of average layers file: " << fname << std::endl;
   std::ofstream out(fname.c_str());
@@ -770,13 +781,13 @@ void Acoustic2D::create_ave_layers_file() const
   const unsigned int block_end[] = {0, 0, 100}; //{ 20, 100, 80 };
   //const unsigned int n_layers[]  = { 1, 1, 20 };
 
-  if (fabs(block_end[0] - block_beg[0]) > FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  if (fabs(block_end[0] - block_beg[0]) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
   {
     out << block_beg[0] << " " << block_end[0] << " 1 0\n";
     out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
   }
 
-  if (fabs(block_end[1] - block_beg[1]) > FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  if (fabs(block_end[1] - block_beg[1]) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
   {
     out << block_beg[1] << " " << block_end[1] << " 1 0\n";
     out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
@@ -833,15 +844,15 @@ void Acoustic2D::create_ave_layers_file() const
 
 
 
-void Acoustic2D::export_coefficients_distribution(const std::string &filename) const
+void Acoustic2D::export_coefficients(const std::string &filename) const
 {
   // since a part of software that will use this coefficients distribution
   // is based on suggestion that coefficients are vertex-wise distributed
   // instead of cell-wise distribution accepted in this code,
   // we need to convert our array of coefficients to another one.
   // the rule of conversion is quite simple.
-  // assume we have a vertex v4, and we need to define the value
-  // of the suitable coefficient at it.
+  // assume we have a mesh, and we need to define the value
+  // of the suitable coefficient at its vertices.
   // v6 --- v7 --- v8
   // |  c2  |  c3  |
   // v3 --- v4 --- v5
@@ -850,9 +861,151 @@ void Acoustic2D::export_coefficients_distribution(const std::string &filename) c
   // vi (i=0,..,8) - vertices
   // ci (i=0,..,3) - coefficients
   //
-  // we do the following averaging
+  // we do the following averaging for the vertices of the first cell
+  // c(v0) = c0
+  // c(v1) = 1/2 * (c0 + c1)
+  // c(v3) = 1/2 * (c0 + c2)
   // c(v4) = 1/4 * (c0 + c1 + c2 + c3)
   // that's it.
 
+  const unsigned int nx = _param->N_FINE_X; // for brevity
+  const unsigned int ny = _param->N_FINE_Y; // for brevity
 
+  expect(_fmesh.n_rectangles() == nx * ny, "The number of elements is somehow incorrect");
+  expect(_fmesh.n_vertices() == (nx + 1) * (ny + 1), "The number of elements is somehow incorrect");
+
+  std::vector<double> coeff_a_vert(_fmesh.n_vertices());
+  std::vector<double> coeff_b_vert(_fmesh.n_vertices());
+
+  // left lower corner
+  coeff_a_vert[0] = _coef_alpha[0];
+  coeff_b_vert[0] = _coef_beta[0];
+
+  // right lower corner
+  coeff_a_vert[nx] = _coef_alpha[nx - 1];
+  coeff_b_vert[nx] = _coef_beta[nx - 1];
+
+  // left upper corner
+  coeff_a_vert[ny * (nx + 1)] = _coef_alpha[(ny - 1) * nx];
+  coeff_b_vert[ny * (nx + 1)] = _coef_beta[(ny - 1) * nx];
+
+  // right upper corner
+  coeff_a_vert[(ny + 1) * (nx + 1) - 1] = _coef_alpha[ny * nx - 1];
+  coeff_b_vert[(ny + 1) * (nx + 1) - 1] = _coef_beta[ny * nx - 1];
+
+  // bottom line except corners (shared by 2 elements)
+  for (unsigned int i = 1; i < nx; ++i)
+  {
+    coeff_a_vert[i] = 0.5 * (_coef_alpha[i - 1] + _coef_alpha[i]);
+    coeff_b_vert[i] = 0.5 * (_coef_beta[i - 1] + _coef_beta[i]);
+  }
+
+  // top line except corners (shared by 2 elements)
+  unsigned int start_v = ny * (nx + 1); // start number for vertices
+  unsigned int start_c = (ny - 1) * nx; // start number for cells
+  for (unsigned int i = 1; i < nx; ++i)
+  {
+    coeff_a_vert[start_v + i] = 0.5 * (_coef_alpha[start_c + i - 1] + _coef_alpha[start_c + i]);
+    coeff_b_vert[start_v + i] = 0.5 * (_coef_beta[start_c + i - 1] + _coef_beta[start_c + i]);
+  }
+
+  // left line except corners (shared by 2 elements)
+  //unsigned int start_v = ny * (nx + 1); // start number for vertices
+  //unsigned int start_c = (ny - 1) * nx; // start number for cells
+  for (unsigned int i = 1; i < ny; ++i)
+  {
+    coeff_a_vert[i * (nx + 1)] = 0.5 * (_coef_alpha[(i - 1) * nx] + _coef_alpha[i * nx]);
+    coeff_b_vert[i * (nx + 1)] = 0.5 * (_coef_beta[(i - 1) * nx] + _coef_beta[i * nx]);
+  }
+
+  // right line except corners (shared by 2 elements)
+  start_v = nx; // start number for vertices
+  start_c = nx - 1; // start number for cells
+  for (unsigned int i = 1; i < ny; ++i)
+  {
+    coeff_a_vert[start_v + i * (nx + 1)] = 0.5 * (_coef_alpha[start_c + (i - 1) * nx] + _coef_alpha[start_c + i * nx]);
+    coeff_b_vert[start_v + i * (nx + 1)] = 0.5 * (_coef_beta[start_c + (i - 1) * nx] + _coef_beta[start_c + i * nx]);
+  }
+
+  // other vertices (internal - shared by 4 elements)
+  for (unsigned int i = 1; i < ny; ++i)
+  {
+    for (unsigned int j = 1; j < nx; ++j)
+    {
+      coeff_a_vert[i * (nx + 1) + j] = 0.25 * (_coef_alpha[(i - 1) * nx + j - 1] +
+                                               _coef_alpha[(i - 1) * nx + j - 0] +
+                                               _coef_alpha[(i - 0) * nx + j - 1] +
+                                               _coef_alpha[(i - 0) * nx + j - 0]);
+      coeff_b_vert[i * (nx + 1) + j] = 0.25 * (_coef_beta[(i - 1) * nx + j - 1] +
+                                               _coef_beta[(i - 1) * nx + j - 0] +
+                                               _coef_beta[(i - 0) * nx + j - 1] +
+                                               _coef_beta[(i - 0) * nx + j - 0]);
+    }
+  }
+
+  std::ofstream out(filename.c_str());
+  require(out, "File " + filename + " cannot be opened");
+  out.setf(std::ios::scientific);
+  out.precision(14);
+
+  out << _fmesh.n_vertices() << "\n";
+  for (unsigned int i = 0; i < _fmesh.n_vertices(); ++i)
+    out << coeff_a_vert[i] << " " << coeff_b_vert[i] << "\n";
+
+  out.close();
+}
+
+
+
+void Acoustic2D::import_coefficients(const std::string &filename)
+{
+  // for some explanation see comments from export_coefficients function.
+  // here we read a set of coefficients and convert them to cell-wise representation,
+  // in such a way that if we have a mesh
+  // v6 --- v7 --- v8
+  // |  c2  |  c3  |
+  // v3 --- v4 --- v5
+  // |  c0  |  c1  |
+  // v0 --- v1 --- v2
+  // vi (i=0,..,8) - vertices
+  // ci (i=0,..,3) - coefficients
+  //
+  // then we get the coefficients according to the following rule
+  // c0 = 1/4 * (c(v0) + c(v1) + c(v3) + c(v4))
+  // c1 = 1/4 * (c(v1) + c(v2) + c(v4) + c(v5))
+  // etc.
+
+  std::ifstream in(filename.c_str());
+  require(in, "File " + filename + " cannot be opened");
+
+  unsigned int n_values;
+  in >> n_values;
+  require(n_values == _fmesh.n_vertices(),
+          "The number of coefficients from the file " + filename + " doesn't correspond to the current number of mesh vertices");
+
+  std::vector<double> coeff_a_vert(n_values);
+  std::vector<double> coeff_b_vert(n_values);
+
+  for (unsigned int i = 0; i < n_values; ++i)
+    in >> coeff_a_vert[i] >> coeff_b_vert[i];
+
+  in.close();
+
+  // allocate the memory for cell-wise distributed coefficients
+  _coef_alpha.resize(_fmesh.n_rectangles(), 0); // initialized by 0
+  _coef_beta.resize(_fmesh.n_rectangles(), 0); // initialized by 0
+
+  // now we distribute the coefficients by cells
+  for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
+  {
+    const fem::Rectangle &element = _fmesh.rectangle(cell);
+    for (unsigned int v = 0; v < fem::Rectangle::n_vertices; ++v)
+    {
+      const unsigned int vert = element.vertex(v); // the number of a current vertex
+      _coef_alpha[cell] += coeff_a_vert[vert];
+      _coef_beta[cell] += coeff_b_vert[vert];
+    }
+    _coef_alpha[cell] /= fem::Rectangle::n_vertices;
+    _coef_beta[cell] /= fem::Rectangle::n_vertices;
+  }
 }

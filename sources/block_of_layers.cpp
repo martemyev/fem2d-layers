@@ -4,7 +4,7 @@
 
 
 
-void BlockOfLayers::init(const Point &min_point, const Point &max_point,
+void BlockOfLayers::init(const fem::Point &min_point, const fem::Point &max_point,
                          unsigned int n_layers, double angle,
                          const std::vector<double> &layers_thickness,
                          const std::vector<double> &layers_coef_alpha,
@@ -30,8 +30,8 @@ void BlockOfLayers::init(const Point &min_point, const Point &max_point,
 
 
 
-bool BlockOfLayers::contains_element(const Rectangle &cell,
-                                     const std::vector<Point> &points) const
+bool BlockOfLayers::contains_element(const fem::Rectangle &cell,
+                                     const std::vector<fem::Point> &points) const
 {
   // we think that a cell belongs to a block if a center of the cell belongs to the block
   double xc = 0., yc = 0.; // center of the cell
@@ -55,8 +55,8 @@ bool BlockOfLayers::contains_element(const Rectangle &cell,
 
 
 
-void BlockOfLayers::get_coefs(const Rectangle &cell,
-                              const std::vector<Point> &points,
+void BlockOfLayers::get_coefs(const fem::Rectangle &cell,
+                              const std::vector<fem::Point> &points,
                               double &coef_alpha,
                               double &coef_beta) const
 {

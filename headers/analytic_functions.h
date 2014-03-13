@@ -5,6 +5,8 @@
 #include "fem/function.h"
 #include "parameters.h"
 
+using namespace fem;
+
 class AnalyticSolution : public Function
 {
 public:

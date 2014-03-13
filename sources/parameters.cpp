@@ -22,13 +22,20 @@ void Parameters::default_parameters()
 {
   MESH_DIR = HOME_DIRECTORY + "/projects/tat_gmsfem/brandnew/meshes/";
   GEO_DIR  = HOME_DIRECTORY + "/projects/tat_gmsfem/brandnew/geometries/";
+
   LAYERS_DIR = PROJECT_DIR + "/layers/";
-  LAYERS_FILE = "lay_1_0.dat";
+  COEF_DIR = PROJECT_DIR + "/coef/";
+
+  LAYERS_FILE = "lay.dat";
   USE_LAYERS_FILE = false; // by default we use COEF_*_VALUES
   CREATE_BIN_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
   CREATE_AVE_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
   H_BIN_LAYER_PERCENT = 1; // thickness of one layer in case of binary layers
   LAYERS_FILE_SUFFIX = ""; // there is no suffix by default
+
+  COEF_FILE = "coef.dat";
+  SAVE_COEF = false;
+  COEF_SAVED = false;
 
   RES_TOP_DIR = "../results/"; // this top level directory containing all results usually exists on the same level as 'build', 'sources', 'headers' directories
   RES_DIR = ""; // should be changed and based on some parameters
@@ -81,6 +88,10 @@ void Parameters::read_from_command_line(int argc, char **argv)
     ("meshfile", po::value<std::string>(),  std::string("name of mesh file (" + MESH_FILE + ")").c_str())
     ("meshdir",  po::value<std::string>(),  std::string("path to a directory with meshes (" + MESH_DIR + ")").c_str())
     ("ladir",    po::value<std::string>(),  std::string("path to a directory with layers files (" + LAYERS_DIR + ")").c_str())
+    ("coefdir",  po::value<std::string>(),  std::string("path to a directory with coefficients files (" + COEF_DIR + ")").c_str())
+    ("coeffile", po::value<std::string>(),  std::string("name of file with coefficients distribution (" + COEF_FILE + ")").c_str())
+    ("savecoef", po::value<bool>(),         std::string("need to save coefficients distribution to a file? (" + d2s(SAVE_COEF) + ")").c_str())
+    ("cosaved",  po::value<bool>(),         std::string("is coefficients distribution already saved? (" + d2s(COEF_SAVED) + ")").c_str())
     ("lafile",   po::value<std::string>(),  std::string("name of file with parameters of layers (" + LAYERS_FILE + ")").c_str())
     ("lasuf",    po::value<std::string>(),  std::string("suffix to distinguish several layers files when we create them (" + LAYERS_FILE_SUFFIX + ")").c_str())
     ("lacrebin", po::value<bool>(),         std::string("create (1) or don't (0) a new binary layers file (" + d2s(CREATE_BIN_LAYERS_FILE) + ")").c_str())
@@ -140,6 +151,20 @@ void Parameters::read_from_command_line(int argc, char **argv)
 
   if (vm.count("meshdir"))
     MESH_DIR = vm["meshdir"].as<std::string>();
+
+  if (vm.count("coefdir"))
+    COEF_DIR = vm["coefdir"].as<std::string>();
+
+  if (vm.count("coeffile"))
+    COEF_FILE = vm["coeffile"].as<std::string>();
+
+  if (vm.count("savecoef"))
+    SAVE_COEF = vm["savecoef"].as<bool>();
+
+  if (vm.count("cosaved"))
+    COEF_SAVED = vm["cosaved"].as<bool>();
+
+  require(!(SAVE_COEF && COEF_SAVED), "There are two conflicting options which are ON: savecoef and cosaved");
 
   if (vm.count("ladir"))
   {
@@ -375,6 +400,7 @@ void Parameters::generate_paths()
 {
   MESH_FILE = MESH_DIR + "/" + MESH_FILE; // full path to the mesh file
   LAYERS_FILE = LAYERS_DIR + "/" + LAYERS_FILE; // full path to the layers file
+  COEF_FILE = COEF_DIR + "/" + COEF_FILE; // full path to the coefficients file
 
   std::string coef_a = "", coef_b = "";
   for (unsigned int i = 0; i < N_SUBDOMAINS; ++i)
@@ -419,4 +445,10 @@ void Parameters::check_clean_dirs() const
 
   if (SAVE_SOL)
     create_directory(SOL_DIR);
+
+  path coef_dir(COEF_DIR);
+  if (SAVE_COEF)
+    create_directory(coef_dir);
+  if (COEF_SAVED)
+    require(exists(coef_dir), "There is a coef_saved options turned on, but the directory with coefficients files doesn't exists");
 }

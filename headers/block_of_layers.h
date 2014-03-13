@@ -13,17 +13,17 @@ class Rectangle;
 class BlockOfLayers
 {
 public:
-  void init(const Point &min_point, const Point &max_point,
+  void init(const fem::Point &min_point, const fem::Point &max_point,
             unsigned int n_layers, double angle,
             const std::vector<double> &layers_thickness,
             const std::vector<double> &layers_coef_alpha,
             const std::vector<double> &layers_coef_beta);
 
-  bool contains_element(const Rectangle &rect,
-                        const std::vector<Point> &points) const;
+  bool contains_element(const fem::Rectangle &rect,
+                        const std::vector<fem::Point> &points) const;
 
-  void get_coefs(const Rectangle &cell,
-                 const std::vector<Point> &points,
+  void get_coefs(const fem::Rectangle &cell,
+                 const std::vector<fem::Point> &points,
                  double &coef_alpha,
                  double &coef_beta) const;
 
@@ -31,8 +31,8 @@ public:
 private:
   double _angle;
   unsigned int _n_layers;
-  Point _min_point; // limits of the block
-  Point _max_point;
+  fem::Point _min_point; // limits of the block
+  fem::Point _max_point;
 
   std::vector<double> _layers_thickness;
   std::vector<double> _layers_coef_alpha;

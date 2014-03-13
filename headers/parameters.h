@@ -131,6 +131,26 @@ public:
   double H_BIN_LAYER_PERCENT;
   std::string LAYERS_FILE_SUFFIX;
 
+            /**
+             * Whether we need to save a coefficients distribution for further usage in other programs or in this one
+             */
+  bool SAVE_COEF;
+
+            /**
+             * Is there a file with saved coefficients distribution, or not
+             */
+  bool COEF_SAVED;
+
+            /**
+             * A name of file where a coefficients distribution will be (or has been) kept
+             */
+  std::string COEF_FILE;
+
+            /**
+             * A directory where files with coefficients distributions are kept
+             */
+  std::string COEF_DIR;
+
 //            /**
 //             * The layers are distributed in parallel to each other, but probably not horizontally.
 //             * This angle (in degrees, not radians) describes the slope of the layers.

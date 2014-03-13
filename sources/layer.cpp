@@ -22,7 +22,7 @@
 
 
 void Layer::init(unsigned int number, const std::vector<double> &thickness_percent,
-                 const Point &min_point, const Point &max_point,
+                 const fem::Point &min_point, const fem::Point &max_point,
                  double angle)
 {
   const double right_angle = 90.; // right angle in degrees
@@ -40,7 +40,7 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
   _max_point = max_point;
 
   _angle = angle; // the angle between horizontal (OX) axis
-  _angle_rad_abs = fabs(_angle * PI / 180.); // abs angle in radians
+  _angle_rad_abs = fabs(_angle * fem::math::PI / 180.); // abs angle in radians
 
   // the numeration of vertices is the same as in case of rectangle
   // 2 --- 3   Y
@@ -69,7 +69,7 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
   expect(y_bottom >= _min_point.coord(1), "Please check y_bottom. It's wrong.");
 
   // now we define y-coordinates of the real layer vertices (taking the angle into account)
-  if (fabs(_angle) < FLOAT_NUMBERS_EQUALITY_TOLERANCE) // if angle is zero, there is no stretching, and transformation is not required
+  if (fabs(_angle) < fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE) // if angle is zero, there is no stretching, and transformation is not required
   {
     _Y[0] = _Y[1] = y_bottom;
     _Y[2] = _Y[3] = y_top;
@@ -150,7 +150,7 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
 
 
 
-bool Layer::contains_element(const Rectangle &cell, const std::vector<Point> &points) const
+bool Layer::contains_element(const fem::Rectangle &cell, const std::vector<fem::Point> &points) const
 {
   // we think that a cell belongs to a layer if a center of the cell belongs to the layer
   double xc = 0., yc = 0.; // center of the cell

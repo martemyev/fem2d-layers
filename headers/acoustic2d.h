@@ -41,7 +41,7 @@ private:
             /**
              * Fine triangular mesh
              */
-  FineMesh _fmesh;
+  fem::FineMesh _fmesh;
 
             /**
              * Global vector of right hand side
@@ -77,15 +77,16 @@ private:
              */
   //void find_bound_nodes(std::vector<int> &b_nodes) const;
 
-  void solve_explicit_triangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
-  void solve_explicit_rectangles(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
-  void solve_crank_nicolson(const DoFHandler &dof_handler, const CSRPattern &csr_pattern);
+  void solve_explicit_triangles(const fem::DoFHandler &dof_handler, const fem::CSRPattern &csr_pattern);
+  void solve_explicit_rectangles(const fem::DoFHandler &dof_handler, const fem::CSRPattern &csr_pattern);
+  void solve_crank_nicolson(const fem::DoFHandler &dof_handler, const fem::CSRPattern &csr_pattern);
 
   void coefficients_initialization();
   void create_bin_layers_file() const;
   void create_ave_layers_file() const;
 
-  void export_coefficients_distribution(const std::string &filename) const;
+  void export_coefficients(const std::string &filename) const;
+  void import_coefficients(const std::string &filename);
 };
 
 

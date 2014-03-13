@@ -2,10 +2,11 @@
 #define LAYER_H
 
 #include "fem/quadrangle.h"
+#include "fem/point.h"
+#include "fem/rectangle.h"
 
-
-class Point;
-class Rectangle;
+//class fem::Point;
+//class fem::Rectangle;
 
 
 /**
@@ -15,7 +16,7 @@ class Rectangle;
  * which means that the angle Pi/2 is prohibited -
  * so we can not get vertical aligned layers.
  */
-class Layer : public Quadrangle
+class Layer : public fem::Quadrangle
 {
 public:
 //  Layer();
@@ -33,22 +34,22 @@ public:
    *                the possible range of the angle values is (-90, 90), not including right angles
    */
   void init(unsigned int number, const std::vector<double> &thickness_percent,
-            const Point &min_point, const Point &max_point,
+            const fem::Point &min_point, const fem::Point &max_point,
             double angle);
 
             /**
              * Check if this layer contains a rectangle
              * @param rect - a rectangle that we want to check
              */
-  bool contains_element(const Rectangle &cell, const std::vector<Point> &points) const;
+  bool contains_element(const fem::Rectangle &cell, const std::vector<fem::Point> &points) const;
 
 private:
   unsigned int _number;
   double _thickness_percent;
   double _angle;
   double _angle_rad_abs;
-  Point _min_point;
-  Point _max_point;
+  fem::Point _min_point;
+  fem::Point _max_point;
 
   /**
    * The layer has 2 sides parallel to OY axis, and 2 sides with possible slope.
