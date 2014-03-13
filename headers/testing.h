@@ -24,43 +24,43 @@
 // =================================
 TEST(FineMesh, read_without_physical_and_partitions)
 {
-  FineMesh fmesh;
+  fem::FineMesh fmesh;
   fmesh.read(TEST_DIR + "/test_mesh_0.msh",
-             Point(0, 0),
-             Point(1, 1));
+             fem::Point(0, 0),
+             fem::Point(1, 1));
 
-  Point points[] = { Point(0, 0, 0),
-                     Point(1, 0, 0),
-                     Point(1, 1, 0),
-                     Point(0, 1, 0),
-                     Point(0.499999999998694, 0, 0),
-                     Point(1, 0.499999999998694, 0),
-                     Point(0.5000000000020591, 1, 0),
-                     Point(0, 0.5000000000020591, 0),
-                     Point(0.5, 0.5, 0),
-                     Point(0.2500000000010295, 0.7500000000010295, 0),
-                     Point(0.7500000000010295, 0.7499999999993469, 0),
-                     Point(0.7499999999993471, 0.249999999999347, 0),
-                     Point(0.2499999999994391, 0.2500000000006863, 0)
-                   };
+  fem::Point points[] = { fem::Point(0, 0, 0),
+                          fem::Point(1, 0, 0),
+                          fem::Point(1, 1, 0),
+                          fem::Point(0, 1, 0),
+                          fem::Point(0.499999999998694, 0, 0),
+                          fem::Point(1, 0.499999999998694, 0),
+                          fem::Point(0.5000000000020591, 1, 0),
+                          fem::Point(0, 0.5000000000020591, 0),
+                          fem::Point(0.5, 0.5, 0),
+                          fem::Point(0.2500000000010295, 0.7500000000010295, 0),
+                          fem::Point(0.7500000000010295, 0.7499999999993469, 0),
+                          fem::Point(0.7499999999993471, 0.249999999999347, 0),
+                          fem::Point(0.2499999999994391, 0.2500000000006863, 0)
+                        };
 
-  Triangle triangles[] = { Triangle(7, 4, 10),
-                           Triangle(1, 13, 8),
-                           Triangle(6, 3, 11),
-                           Triangle(2, 12, 5),
-                           Triangle(7, 10, 9),
-                           Triangle(8, 9, 10),
-                           Triangle(7, 9, 11),
-                           Triangle(8, 13, 9),
-                           Triangle(11, 9, 12),
-                           Triangle(5, 9, 13),
-                           Triangle(6, 11, 12),
-                           Triangle(5, 12, 9),
-                           Triangle(1, 5, 13),
-                           Triangle(6, 12, 2),
-                           Triangle(4, 8, 10),
-                           Triangle(7, 11, 3)
-                         };
+  fem::Triangle triangles[] ={ fem::Triangle(7, 4, 10),
+                               fem::Triangle(1, 13, 8),
+                               fem::Triangle(6, 3, 11),
+                               fem::Triangle(2, 12, 5),
+                               fem::Triangle(7, 10, 9),
+                               fem::Triangle(8, 9, 10),
+                               fem::Triangle(7, 9, 11),
+                               fem::Triangle(8, 13, 9),
+                               fem::Triangle(11, 9, 12),
+                               fem::Triangle(5, 9, 13),
+                               fem::Triangle(6, 11, 12),
+                               fem::Triangle(5, 12, 9),
+                               fem::Triangle(1, 5, 13),
+                               fem::Triangle(6, 12, 2),
+                               fem::Triangle(4, 8, 10),
+                               fem::Triangle(7, 11, 3)
+                             };
 
   compare_points(fmesh, 13, points);
   compare_triangles(fmesh, 16, triangles, points);
@@ -82,24 +82,24 @@ TEST(FineMesh, create_rectangular_grid)
 // =================================
 TEST(FineMesh, read_with_physical_and_partitions)
 {
-  FineMesh fmesh;
+  fem::FineMesh fmesh;
   fmesh.read(TEST_DIR + "/test_mesh_1.msh",
-             Point(0, 0),
-             Point(1, 1));
+             fem::Point(0, 0),
+             fem::Point(1, 1));
 
   // check the number of the mesh vertices
   EXPECT_EQ((int)fmesh.n_vertices(), 180);
 
-  Point points[] = { Point(0, 0, 0), // first vertex
-                     Point(0.3207106781186477, 0.8500000000000002, 0) // last vertex
+  fem::Point points[] = { fem::Point(0, 0, 0), // first vertex
+                     fem::Point(0.3207106781186477, 0.8500000000000002, 0) // last vertex
                    };
 
   // check the first vertex
-  for (unsigned int j = 0; j < Point::n_coord; ++j)
+  for (unsigned int j = 0; j < fem::Point::n_coord; ++j)
     EXPECT_DOUBLE_EQ(fmesh.vertex(0).coord(j), points[0].coord(j));
 
   // check the last vertex
-  for (unsigned int j = 0; j < Point::n_coord; ++j)
+  for (unsigned int j = 0; j < fem::Point::n_coord; ++j)
     EXPECT_DOUBLE_EQ(fmesh.vertex(fmesh.n_vertices() - 1).coord(j), points[1].coord(j));
 
   // check the number of the mesh triangles
@@ -116,16 +116,16 @@ TEST(FineMesh, read_with_physical_and_partitions)
   std::vector<unsigned int> gc3(1);
   gc3[0] = 5;
 
-  std::vector<Point> empty_points;
+  std::vector<fem::Point> empty_points;
 
-  Triangle triangles[] = { Triangle(17, 89, 114, empty_points, 1, 1), // triangle number 1 (starting from 1) - first one
-                           Triangle(52, 115, 76, empty_points, 1, 5, gc1), // triangle number 9 (starting from 1)
-                           Triangle(99, 168, 121, empty_points, 1, 2, gc2), // triangle number 185 (starting from 1)
-                           Triangle(8, 47, 178, empty_points, 11, 4, gc3)  // triangle number 318 (starting from 1) - last one
-                         };
+  fem::Triangle triangles[] ={ fem::Triangle(17, 89, 114, empty_points, 1, 1), // triangle number 1 (starting from 1) - first one
+                               fem::Triangle(52, 115, 76, empty_points, 1, 5, gc1), // triangle number 9 (starting from 1)
+                               fem::Triangle(99, 168, 121, empty_points, 1, 2, gc2), // triangle number 185 (starting from 1)
+                               fem::Triangle(8, 47, 178, empty_points, 11, 4, gc3)  // triangle number 318 (starting from 1) - last one
+                             };
 
   // triangle number 1
-  for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
+  for (unsigned int j = 0; j < fem::Triangle::n_vertices; ++j)
   {
     // check vertices numbers.
     // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
@@ -142,7 +142,7 @@ TEST(FineMesh, read_with_physical_and_partitions)
   EXPECT_EQ((int)fmesh.triangle(0).n_ghost_cells(), 0);
 
   // triangle number 9
-  for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
+  for (unsigned int j = 0; j < fem::Triangle::n_vertices; ++j)
   {
     // check vertices numbers.
     // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
@@ -165,7 +165,7 @@ TEST(FineMesh, read_with_physical_and_partitions)
   }
 
   // triangle number 185
-  for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
+  for (unsigned int j = 0; j < fem::Triangle::n_vertices; ++j)
   {
     // check vertices numbers.
     // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
@@ -188,7 +188,7 @@ TEST(FineMesh, read_with_physical_and_partitions)
   }
 
   // triangle number 318
-  for (unsigned int j = 0; j < Triangle::n_vertices; ++j)
+  for (unsigned int j = 0; j < fem::Triangle::n_vertices; ++j)
   {
     // check vertices numbers.
     // we do "+1" since initially the mesh vertices are numerated from 1. but in the program they are shifted to start from 0
@@ -225,33 +225,33 @@ TEST(FineMesh, read_with_physical_and_partitions)
 // =================================
 TEST(CSRPattern, check_pattern_and_other_stuff)
 {
-  FineMesh fmesh;
+  fem::FineMesh fmesh;
   fmesh.read(TEST_DIR + "/test_small_10_4.msh",
-             Point(0, 0),
-             Point(4, 4));
+             fem::Point(0, 0),
+             fem::Point(4, 4));
 
   const unsigned int n_points = 10;
-  Point points[] = { Point(0, 0, 0),
-                     Point(2, 0, 0),
-                     Point(4, 0, 0),
-                     Point(1, 1, 0),
-                     Point(0, 2, 0),
-                     Point(2, 2, 0),
-                     Point(4, 2, 0),
-                     Point(0, 4, 0),
-                     Point(2, 4, 0),
-                     Point(4, 4, 0)
-                   };
+  fem::Point points[] ={ fem::Point(0, 0, 0),
+                         fem::Point(2, 0, 0),
+                         fem::Point(4, 0, 0),
+                         fem::Point(1, 1, 0),
+                         fem::Point(0, 2, 0),
+                         fem::Point(2, 2, 0),
+                         fem::Point(4, 2, 0),
+                         fem::Point(0, 4, 0),
+                         fem::Point(2, 4, 0),
+                         fem::Point(4, 4, 0)
+                       };
   compare_points(fmesh, n_points, points);
 
-  FiniteElement fe(1);
+  fem::FiniteElement fe(1);
 
-  DoFHandler dof_handler(&fmesh);
-  dof_handler.distribute_dofs(fe, CG); // default parameters
+  fem::DoFHandler dof_handler(&fmesh);
+  dof_handler.distribute_dofs(fe, fem::CG); // default parameters
   check_dof_handler(dof_handler, fmesh, 1); // 1 means first order basis functions
 
-  CSRPattern csr_pattern;
-  csr_pattern.make_sparse_format(dof_handler, CG);
+  fem::CSRPattern csr_pattern;
+  csr_pattern.make_sparse_format(dof_handler, fem::CG);
 
   unsigned int row[] = { 0, 4, 10, 13, 18, 23, 30, 36, 40, 45, 48 };
   unsigned int col[] = { 0, 1, 3, 4,
@@ -277,18 +277,18 @@ TEST(CSRPattern, check_pattern_and_other_stuff)
 // =================================
 TEST(CSRPattern, check_that_pattern_doesnt_fall)
 {
-  FineMesh fmesh;
+  fem::FineMesh fmesh;
   fmesh.read(TEST_DIR + "/test_mesh_1.msh",
-             Point(0, 0),
-             Point(1, 1));
+             fem::Point(0, 0),
+             fem::Point(1, 1));
 
-  FiniteElement fe(1);
+  fem::FiniteElement fe(1);
 
-  DoFHandler dof_handler(&fmesh);
-  dof_handler.distribute_dofs(fe, CG); // default parameters
+  fem::DoFHandler dof_handler(&fmesh);
+  dof_handler.distribute_dofs(fe, fem::CG); // default parameters
 
-  CSRPattern csr_pattern;
-  EXPECT_NO_THROW(csr_pattern.make_sparse_format(dof_handler, CG)); // make a CSR pattern
+  fem::CSRPattern csr_pattern;
+  EXPECT_NO_THROW(csr_pattern.make_sparse_format(dof_handler, fem::CG)); // make a CSR pattern
 }
 
 

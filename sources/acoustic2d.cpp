@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <fstream>
 
+using namespace fem;
 
 Acoustic2D::Acoustic2D(Parameters *param)
   : _param(param)
@@ -190,12 +191,12 @@ void Acoustic2D::solve_rectangles()
   MatCreateSeqAIJ(PETSC_COMM_WORLD, csr_pattern.order(), csr_pattern.order(), 0, csr_pattern.nnz(), &_global_stiff_mat);
 
   // allocate the memory for local matrices and vectors
-  double **local_mass_mat = new double*[fem::Rectangle::n_dofs_first];
-  double **local_stiff_mat = new double*[fem::Rectangle::n_dofs_first];
-  for (unsigned int i = 0; i < fem::Rectangle::n_dofs_first; ++i)
+  double **local_mass_mat = new double*[Rectangle::n_dofs_first];
+  double **local_stiff_mat = new double*[Rectangle::n_dofs_first];
+  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
   {
-    local_mass_mat[i] = new double[fem::Rectangle::n_dofs_first];
-    local_stiff_mat[i] = new double[fem::Rectangle::n_dofs_first];
+    local_mass_mat[i] = new double[Rectangle::n_dofs_first];
+    local_stiff_mat[i] = new double[Rectangle::n_dofs_first];
   }
 
   // fill up the array of coefficients alpha and beta
@@ -234,7 +235,7 @@ void Acoustic2D::solve_rectangles()
   // assemble the matrices
   for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
   {
-    const fem::Rectangle rectangle = _fmesh.rectangle(cell);
+    const Rectangle rectangle = _fmesh.rectangle(cell);
     rectangle.local_mass_matrix(_coef_alpha[cell], local_mass_mat);
     rectangle.local_stiffness_matrix(_coef_beta[cell], local_stiff_mat);
 
@@ -251,7 +252,7 @@ void Acoustic2D::solve_rectangles()
   }
 
   // free the memory
-  for (unsigned int i = 0; i < fem::Rectangle::n_dofs_first; ++i)
+  for (unsigned int i = 0; i < Rectangle::n_dofs_first; ++i)
   {
     delete[] local_mass_mat[i];
     delete[] local_stiff_mat[i];
@@ -471,7 +472,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
   KSPSetOperators(ksp, system_mat, system_mat, SAME_PRECONDITIONER);
   KSPSetTolerances(ksp, 1e-8, 1e-30, 1e+5, 10000);
 
-  double *local_rhs_vec = new double[fem::Rectangle::n_dofs_first];
+  double *local_rhs_vec = new double[Rectangle::n_dofs_first];
 
   require(_param->N_TIME_STEPS > 1, "There is no time steps to perform: n_time_steps = " + d2s(_param->N_TIME_STEPS));
 
@@ -488,7 +489,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     const RHSFunction rhs_function(*_param);
     for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
     {
-      fem::Rectangle rectangle = _fmesh.rectangle(cell);
+      Rectangle rectangle = _fmesh.rectangle(cell);
       rectangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, local_rhs_vec); // rhs function on the previous time step
       for (unsigned int i = 0; i < rectangle.n_dofs(); ++i)
       {
@@ -584,7 +585,7 @@ void Acoustic2D::coefficients_initialization()
   std::ifstream in(_param->LAYERS_FILE);
   require(in, "File " + _param->LAYERS_FILE + " cannot be opened");
 
-  const std::vector<fem::Rectangle> &cells = _fmesh.rectangles(); // all mesh cells
+  const std::vector<Rectangle> &cells = _fmesh.rectangles(); // all mesh cells
   _coef_alpha.resize(cells.size(), 0); // coefficient alpha in each cell is 0 by default
   _coef_beta.resize(cells.size(),  0); // coefficient beta in each cell is 0 by default
 
@@ -623,7 +624,7 @@ void Acoustic2D::coefficients_initialization()
 
   const double right_angle = 90.; // right angle in degrees
   require(fabs(layer_angle) < right_angle, "Angle doesn't belong to correct range: (-90, 90), its value : " + d2s(layer_angle));
-  require(fabs(fabs(layer_angle) - right_angle) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE, "Angle is equal to right angle (90), what is prohibited");
+  require(fabs(fabs(layer_angle) - right_angle) > math::FLOAT_NUMBERS_EQUALITY_TOLERANCE, "Angle is equal to right angle (90), what is prohibited");
 
   require(n_layers > 0, "The number of layers is 0");
   std::vector<double> layer_h_percent(n_layers); // the thicknesses of the layers in percents
@@ -633,18 +634,18 @@ void Acoustic2D::coefficients_initialization()
   const double x0 = _fmesh.min_coord().coord(0);
   const double x1 = _fmesh.max_coord().coord(0);
   double y0, y1;
-  if (fabs(block_beg[bl]) < fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE) // block_beg is 0
+  if (fabs(block_beg[bl]) < math::FLOAT_NUMBERS_EQUALITY_TOLERANCE) // block_beg is 0
     y0 = _fmesh.min_coord().coord(1);
   else
     y0 = _fmesh.min_coord().coord(1) + 0.01 * block_beg[bl] * Hy;
-  if (fabs(block_end[bl] - 100.) < fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE) // block_end is 100
+  if (fabs(block_end[bl] - 100.) < math::FLOAT_NUMBERS_EQUALITY_TOLERANCE) // block_end is 100
     y1 = _fmesh.max_coord().coord(1);
   else
     y1 = _fmesh.min_coord().coord(1) + 0.01 * block_end[bl] * Hy;
 
   // block limits
-  const fem::Point min_block_point(x0, y0);
-  const fem::Point max_block_point(x1, y1);
+  const Point min_block_point(x0, y0);
+  const Point max_block_point(x1, y1);
 
   // read the info abount thickness and coefficients of each layer
   double total_h_percent = 0.; // in the end of the day total_h should be 100 (because it's in percent). in other case those thicknesses don't make sense
@@ -656,7 +657,7 @@ void Acoustic2D::coefficients_initialization()
        >> layer_coef_beta[i];
     total_h_percent += layer_h_percent[i];
   }
-  require(fabs(total_h_percent - 100.) < fem::math::FLOAT_NUMBERS_EQUALITY_REDUCED_TOLERANCE,
+  require(fabs(total_h_percent - 100.) < math::FLOAT_NUMBERS_EQUALITY_REDUCED_TOLERANCE,
           "The total thickness of all layers is not 100%. It is " + d2s(total_h_percent, true, 14));
 
   // block initialization
@@ -672,7 +673,7 @@ void Acoustic2D::coefficients_initialization()
   double total_block_h = 0.; // in percent
   for (unsigned int i = 0; i < n_blocks; ++i)
     total_block_h += block_end[i] - block_beg[i];
-  require(fabs(total_block_h - 100.) < fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE,
+  require(fabs(total_block_h - 100.) < math::FLOAT_NUMBERS_EQUALITY_TOLERANCE,
           "The blocks either intersect each other or don't fill whole domain");
 
 
@@ -713,13 +714,13 @@ void Acoustic2D::create_bin_layers_file() const
   const unsigned int block_end[] = {0, 0, 100}; //{ 20, 100, 80 };
   //const unsigned int n_layers[]  = { 1, 1, 20 };
 
-  if (fabs(block_end[0] - block_beg[0]) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  if (fabs(block_end[0] - block_beg[0]) > math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
   {
     out << block_beg[0] << " " << block_end[0] << " 1 0\n";
     out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
   }
 
-  if (fabs(block_end[1] - block_beg[1]) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  if (fabs(block_end[1] - block_beg[1]) > math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
   {
     out << block_beg[1] << " " << block_end[1] << " 1 0\n";
     out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
@@ -781,13 +782,13 @@ void Acoustic2D::create_ave_layers_file() const
   const unsigned int block_end[] = {0, 0, 100}; //{ 20, 100, 80 };
   //const unsigned int n_layers[]  = { 1, 1, 20 };
 
-  if (fabs(block_end[0] - block_beg[0]) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  if (fabs(block_end[0] - block_beg[0]) > math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
   {
     out << block_beg[0] << " " << block_end[0] << " 1 0\n";
     out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
   }
 
-  if (fabs(block_end[1] - block_beg[1]) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
+  if (fabs(block_end[1] - block_beg[1]) > math::FLOAT_NUMBERS_EQUALITY_TOLERANCE)
   {
     out << block_beg[1] << " " << block_end[1] << " 1 0\n";
     out << "100 " << _param->COEF_A_VALUES[0] << " " << _param->COEF_B_VALUES[0] << "\n";
@@ -998,14 +999,14 @@ void Acoustic2D::import_coefficients(const std::string &filename)
   // now we distribute the coefficients by cells
   for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
   {
-    const fem::Rectangle &element = _fmesh.rectangle(cell);
-    for (unsigned int v = 0; v < fem::Rectangle::n_vertices; ++v)
+    const Rectangle &element = _fmesh.rectangle(cell);
+    for (unsigned int v = 0; v < Rectangle::n_vertices; ++v)
     {
       const unsigned int vert = element.vertex(v); // the number of a current vertex
       _coef_alpha[cell] += coeff_a_vert[vert];
       _coef_beta[cell] += coeff_b_vert[vert];
     }
-    _coef_alpha[cell] /= fem::Rectangle::n_vertices;
-    _coef_beta[cell] /= fem::Rectangle::n_vertices;
+    _coef_alpha[cell] /= Rectangle::n_vertices;
+    _coef_beta[cell] /= Rectangle::n_vertices;
   }
 }

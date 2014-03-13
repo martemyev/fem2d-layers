@@ -5,19 +5,17 @@
 #include "fem/function.h"
 #include "parameters.h"
 
-using namespace fem;
-
-class AnalyticSolution : public Function
+class AnalyticSolution : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 };
 
-class RHSFunction : public Function
+class RHSFunction : public fem::Function
 {
 public:
   RHSFunction(const Parameters &param);
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 
 private:
   // parameters of Ricker wavelet
@@ -27,16 +25,16 @@ private:
   double yc;
 };
 
-class BoundaryFunction : public Function
+class BoundaryFunction : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 };
 
-class InitialSolution : public Function
+class InitialSolution : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 };
 
 
@@ -46,59 +44,59 @@ public:
 //
 // ========================================
 
-class an_solution_1 : public Function
+class an_solution_1 : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 };
-class an_rhs_function_1 : public Function
+class an_rhs_function_1 : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
-};
-
-class an_solution_2 : public Function
-{
-public:
-  double value(const Point &p, const double t = 0) const;
-};
-class an_rhs_function_2 : public Function
-{
-public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 };
 
-class an_solution_3 : public Function
+class an_solution_2 : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 };
-class an_rhs_function_3 : public Function
+class an_rhs_function_2 : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
-};
-
-class an_solution_4 : public Function
-{
-public:
-  double value(const Point &p, const double t = 0) const;
-};
-class an_rhs_function_4 : public Function
-{
-public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 };
 
-class an_solution_5 : public Function
+class an_solution_3 : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
 };
-class an_rhs_function_5 : public Function
+class an_rhs_function_3 : public fem::Function
 {
 public:
-  double value(const Point &p, const double t = 0) const;
+  double value(const fem::Point &p, const double t = 0) const;
+};
+
+class an_solution_4 : public fem::Function
+{
+public:
+  double value(const fem::Point &p, const double t = 0) const;
+};
+class an_rhs_function_4 : public fem::Function
+{
+public:
+  double value(const fem::Point &p, const double t = 0) const;
+};
+
+class an_solution_5 : public fem::Function
+{
+public:
+  double value(const fem::Point &p, const double t = 0) const;
+};
+class an_rhs_function_5 : public fem::Function
+{
+public:
+  double value(const fem::Point &p, const double t = 0) const;
 };
 
 

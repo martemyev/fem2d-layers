@@ -2,11 +2,9 @@
 #define BLOCK_OF_LAYERS_H
 
 #include "fem/point.h"
+#include "fem/rectangle.h"
 #include "layer.h"
 #include <vector>
-
-
-class Rectangle;
 
 
 

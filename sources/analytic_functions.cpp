@@ -1,6 +1,8 @@
 #include "analytic_functions.h"
 #include "fem/math_functions.h"
 
+using namespace fem;
+
 double AnalyticSolution::value(const Point &p, const double t) const
 {
   //const double x = p.coord(0);
