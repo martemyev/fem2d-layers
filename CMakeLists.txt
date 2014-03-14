@@ -135,7 +135,7 @@ message("HDR_LIST     " ${HDR_LIST})
 
 
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${HDR_LIST})
-add_library(${PROJECT_LIB_NAME} ${SRC_LIST} ${HDR_LIST})
+#add_library(${PROJECT_LIB_NAME} ${SRC_LIST} ${HDR_LIST})
 
 target_link_libraries(${PROJECT_NAME} ${FEM_LIB} ${Boost_LIBRARIES} ${GTEST_LIB} ${PETSC_LIB} ${MPI_LIB})
 

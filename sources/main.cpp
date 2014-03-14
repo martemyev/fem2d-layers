@@ -6,6 +6,7 @@
 #include <boost/timer/timer.hpp>
 #include <gtest/gtest.h>
 #include "petscsys.h"
+#include "fem/point.h"
 
 
 int main(int argc, char **argv)

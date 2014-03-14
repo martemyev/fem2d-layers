@@ -582,3 +582,42 @@ TEST(EllipticAnalyticSolutionRectanglesSparse, AnalyticFunction_expx)
   }
 }
 
+
+
+// =================================
+//
+// =================================
+TEST(EllipticAnalyticSolutionRectanglesDiffDomainsAndMeshes, AnalyticFunction_expx)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+
+  // sparse solvers
+  check_elliptic_solution_rectangles(1, 50, 50, an_solution_4(), an_rhs_function_4(),
+                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+                                     0, 10, 0, 10);
+  check_elliptic_solution_rectangles(1, 51, 51, an_solution_4(), an_rhs_function_4(),
+                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+                                     0, 10, 0, 10);
+  check_elliptic_solution_rectangles(1, 53, 53, an_solution_4(), an_rhs_function_4(),
+                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+                                     0, 10, 0, 10);
+//  check_elliptic_solution_rectangles(1, 10, 11, an_solution_4(), an_rhs_function_4(),
+//                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+//                                     0, 1000, 0, 1000);
+//  check_elliptic_solution_rectangles(1, 11, 10, an_solution_4(), an_rhs_function_4(),
+//                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+//                                     0, 1000, 0, 1000);
+//  check_elliptic_solution_rectangles(1, 13, 13, an_solution_4(), an_rhs_function_4(),
+//                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+//                                     0, 1000, 0, 1000);
+//  check_elliptic_solution_rectangles(1, 131, 131, an_solution_4(), an_rhs_function_4(),
+//                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+//                                     1000, 1500, 1000, 1500);
+//  check_elliptic_solution_rectangles(1, 151, 131, an_solution_4(), an_rhs_function_4(),
+//                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+//                                     1000, 1500, 1000, 1500);
+//  check_elliptic_solution_rectangles(1, 131, 151, an_solution_4(), an_rhs_function_4(),
+//                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+//                                     1000, 1500, 1000, 1500);
+}

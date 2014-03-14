@@ -1,5 +1,6 @@
 #include "analytic_functions.h"
 #include "fem/math_functions.h"
+#include <iostream>
 
 using namespace fem;
 
@@ -21,9 +22,13 @@ double RHSFunction::value(const Point &p, const double t) const
 {
   const double x = p.coord(0);
   const double y = p.coord(1);
-  const double pi = 3.141592654;
+  const double pi = math::PI;
   const double part = pi*pi*f*f*(t - 2./f)*(t - 2./f);
-  return h*h * exp(-h*h*((x - xc)*(x - xc) + (y - yc)*(y - yc))) * (1. - 2.*part) * exp(-part);
+  const double val = h*h * exp(-h*h*((x - xc)*(x - xc) + (y - yc)*(y - yc))) * (1. - 2.*part) * exp(-part);
+#if defined(DEBUG)
+  std::cout << p << ": rhs, part = " << part << " val = " << val << std::endl;
+#endif
+  return val;
 }
 
 

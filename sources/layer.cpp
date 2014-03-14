@@ -27,7 +27,7 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
 {
   const double right_angle = 90.; // right angle in degrees
   expect(fabs(angle) < right_angle, "Angle doesn't belong to correct range: (-90, 90), its value : " + d2s(angle));
-  expect(fabs(fabs(angle) - right_angle) > FLOAT_NUMBERS_EQUALITY_TOLERANCE,
+  expect(fabs(fabs(angle) - right_angle) > fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE,
          "Angle is equal to right angle (90), what is prohibited");
 
   const unsigned int n_layers = thickness_percent.size(); // the total amount of layers

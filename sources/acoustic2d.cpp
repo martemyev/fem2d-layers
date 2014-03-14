@@ -161,7 +161,8 @@ void Acoustic2D::solve_rectangles()
                                  _param->N_FINE_X, _param->N_FINE_Y);
 
 #if defined(DEBUG)
-  std::cout << "n_nodes = " << _fmesh.n_vertices() << std::endl;
+  std::cout << "n_vertices = " << _fmesh.n_vertices() << std::endl;
+  std::cout << "n_rectangles = " << _fmesh.n_rectangles() << std::endl;
 #endif
 
   FiniteElement fe(_param->FE_ORDER);
@@ -490,13 +491,25 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
     {
       Rectangle rectangle = _fmesh.rectangle(cell);
-      rectangle.local_rhs_vector(rhs_function, _fmesh.vertices(), time - dt, local_rhs_vec); // rhs function on the previous time step
+      rectangle.local_rhs_vector(rhs_function, dof_handler.dofs(), time - dt, local_rhs_vec); // rhs function on the previous time step
+#if defined(DEBUG)
+      std::cout << "\trectangle " << cell << "\n\t";
+      for (int i = 0; i < rectangle.n_dofs(); ++i)
+        std::cout << local_rhs_vec[i] << " ";
+      std::cout << std::endl;
+#endif
       for (unsigned int i = 0; i < rectangle.n_dofs(); ++i)
       {
         const unsigned int dof_i = rectangle.dof(i);
         VecSetValue(system_rhs, dof_i, local_rhs_vec[i], ADD_VALUES);
       }
     } // rhs part assembling
+
+#if defined(DEBUG)
+    double rhs_norm;
+    VecNorm(system_rhs, NORM_2, &rhs_norm);
+    std::cout << "rhs norm = " << rhs_norm << std::endl;
+#endif
 
     MatMult(_global_stiff_mat, solution_1, temp);
     VecAXPBY(system_rhs, -dt*dt, dt*dt, temp);

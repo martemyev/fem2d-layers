@@ -214,13 +214,12 @@ void check_elliptic_solution_rectangles(bool sparse,
                                         double &current_rel_error,
                                         int &current_n_rectangles,
                                         double prev_rel_error = -1,
-                                        int prev_n_rectangles = 0)
+                                        int prev_n_rectangles = 0,
+                                        const double X_BEG = 0.,
+                                        const double X_END = 1.,
+                                        const double Y_BEG = 0.,
+                                        const double Y_END = 1.)
 {
-  const double X_BEG = 0;
-  const double X_END = 1;
-  const double Y_BEG = 0;
-  const double Y_END = 1;
-
   fem::FineMesh fmesh;
   fmesh.create_rectangular_grid(X_BEG, X_END, Y_BEG, Y_END, N_FINE_X, N_FINE_Y);
 
@@ -308,6 +307,13 @@ void check_elliptic_solution_rectangles(bool sparse,
     fem::Point vert = fmesh.vertex(i);
     VecSetValue(exact_solution, i, an_solution.value(vert, time), INSERT_VALUES);
   }
+
+//#if defined(DEBUG)
+//  double norm;
+//  VecNorm(exact_solution, NORM_2, &norm);
+//  std::cout << "norm of exact solution " << norm << "\n";
+//#endif
+
 
   current_n_rectangles = fmesh.n_rectangles(); // the number of rectangles of fine mesh
   current_rel_error = fem::math::rel_error(solution, exact_solution); // relative error
