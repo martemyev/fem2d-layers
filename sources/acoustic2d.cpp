@@ -582,7 +582,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
 void Acoustic2D::coefficients_initialization()
 {
-  std::ifstream in(_param->LAYERS_FILE);
+  std::ifstream in(_param->LAYERS_FILE.c_str());
   require(in, "File " + _param->LAYERS_FILE + " cannot be opened");
 
   const std::vector<Rectangle> &cells = _fmesh.rectangles(); // all mesh cells
