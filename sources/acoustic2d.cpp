@@ -471,7 +471,7 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
   KSP ksp;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
   KSPSetOperators(ksp, system_mat, system_mat, SAME_PRECONDITIONER);
-  KSPSetTolerances(ksp, 1e-8, 1e-30, 1e+5, 10000);
+  KSPSetTolerances(ksp, 1e-16, 1e-30, 1e+5, 10000);
 
   double *local_rhs_vec = new double[Rectangle::n_dofs_first];
 
@@ -505,9 +505,10 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
       }
     } // rhs part assembling
 
-#if defined(DEBUG)
     double rhs_norm;
     VecNorm(system_rhs, NORM_2, &rhs_norm);
+
+#if defined(DEBUG)
     std::cout << "rhs norm = " << rhs_norm << std::endl;
 #endif
 
@@ -520,10 +521,16 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     MatMult(_global_mass_mat, solution_1, temp);
     VecAXPY(system_rhs, 2., temp);
 
+    double system_rhs_norm_before_bc;
+    VecNorm(system_rhs, NORM_2, &system_rhs_norm_before_bc);
+
     // impose Dirichlet boundary condition
     const BoundaryFunction boundary_function;
     for (unsigned int i = 0; i < b_nodes.size(); ++i)
       VecSetValue(system_rhs, b_nodes[i], boundary_function.value(_fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
+
+    double system_rhs_norm_after_bc;
+    VecNorm(system_rhs, NORM_2, &system_rhs_norm_after_bc);
 
     // solve the SLAE
     KSPSolve(ksp, system_rhs, solution);
@@ -548,13 +555,17 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
         res.write_vts(fname, _param->N_FINE_X, _param->N_FINE_Y, solution, NULL, _coef_alpha, _coef_beta);
       else
         res.write_vts(fname, _param->N_FINE_X, _param->N_FINE_Y, solution); //, exact_solution, _coef_alpha, _coef_beta);
+    }
 
-      if (_param->PRINT_INFO)
-      {
-        double norm;
-        VecNorm(solution, NORM_2, &norm);
-        std::cout << "  step " << time_step << " norm " << norm << std::endl;
-      }
+    if (_param->PRINT_INFO)
+    {
+      double norm;
+      VecNorm(solution, NORM_2, &norm);
+      std::cout.setf(std::ios::scientific);
+      std::cout.precision(4);
+      std::cout << "  step " << time_step << " norm " << norm << " rhs_norm " << rhs_norm
+                << " sys_rhs_bef_bc " << system_rhs_norm_before_bc
+                << " after " << system_rhs_norm_after_bc << std::endl;
     }
 
     if ((_param->SAVE_SOL && (time_step % _param->SOL_STEP == 0)) || (time_step == _param->N_TIME_STEPS))
