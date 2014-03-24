@@ -74,3 +74,25 @@ void BlockOfLayers::get_coefs(const fem::Rectangle &cell,
 
   require(false, "The element cannot be found in layers");
 }
+
+
+
+const Layer& BlockOfLayers::layer_which_contains(const fem::Rectangle &cell,
+                                                 const std::vector<fem::Point> &points) const
+{
+  expect(contains_element(cell, points), "This block doesn't have this cell");
+  for (unsigned int i = 0; i < _n_layers; ++i)
+  {
+    if (_layers[i].contains_element(cell, points))
+      return _layers[i];
+  }
+
+  require(false, "The element cannot be found in layers");
+}
+
+
+
+unsigned int BlockOfLayers::n_layers() const
+{
+  return _n_layers;
+}

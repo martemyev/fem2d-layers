@@ -29,9 +29,11 @@ void Parameters::default_parameters()
   LAYERS_FILE = "lay.dat";
   USE_LAYERS_FILE = false; // by default we use COEF_*_VALUES
   CREATE_BIN_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
-  CREATE_AVE_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
+  WHAT_BIN_LAYERS_FILE = "";
+  //CREATE_AVE_LAYERS_FILE = false; // by default (and usually) we don't need to create new layers file
   H_BIN_LAYER_PERCENT = 1; // thickness of one layer in case of binary layers
   LAYERS_FILE_SUFFIX = ""; // there is no suffix by default
+  USE_AVERAGED = false;
 
   COEF_FILE = "coef.dat";
   SAVE_COEF = false;
@@ -95,7 +97,9 @@ void Parameters::read_from_command_line(int argc, char **argv)
     ("lafile",   po::value<std::string>(),  std::string("name of file with parameters of layers (" + LAYERS_FILE + ")").c_str())
     ("lasuf",    po::value<std::string>(),  std::string("suffix to distinguish several layers files when we create them (" + LAYERS_FILE_SUFFIX + ")").c_str())
     ("lacrebin", po::value<bool>(),         std::string("create (1) or don't (0) a new binary layers file (" + d2s(CREATE_BIN_LAYERS_FILE) + ")").c_str())
-    ("lacreave", po::value<bool>(),         std::string("create (1) or don't (0) a new average layers file (" + d2s(CREATE_AVE_LAYERS_FILE) + ")").c_str())
+    ("whatbin",  po::value<std::string>(),  std::string("what bin layer file do you want to create (" + WHAT_BIN_LAYERS_FILE + ")").c_str())
+    //("lacreave", po::value<bool>(),         std::string("create (1) or don't (0) a new average layers file (" + d2s(CREATE_AVE_LAYERS_FILE) + ")").c_str())
+    ("useave",   po::value<bool>(),         std::string("use averaged coefficients where possible (" + d2s(USE_AVERAGED) + ")").c_str())
     ("hlayer",   po::value<double>(),       std::string("thickness of one binary layer in percent (" + d2s(H_BIN_LAYER_PERCENT) + ")").c_str())
     ("scheme",   po::value<std::string>(),  std::string("time scheme (" + time_scheme + ")").c_str())
     ("tend",     po::value<double>(),       std::string("time ending (" + d2s(TIME_END) + ")").c_str())
@@ -179,13 +183,19 @@ void Parameters::read_from_command_line(int argc, char **argv)
   }
 
   if (vm.count("lacrebin"))
+  {
     CREATE_BIN_LAYERS_FILE = vm["lacrebin"].as<bool>();
-  if (vm.count("lacreave"))
-    CREATE_AVE_LAYERS_FILE = vm["lacreave"].as<bool>();
+    if (vm.count("whatbin"))
+      WHAT_BIN_LAYERS_FILE = vm["whatbin"].as<std::string>();
+  }
+//  if (vm.count("lacreave"))
+//    CREATE_AVE_LAYERS_FILE = vm["lacreave"].as<bool>();
   if (vm.count("hlayer"))
     H_BIN_LAYER_PERCENT = vm["hlayer"].as<double>();
+  if (vm.count("useave"))
+    USE_AVERAGED = vm["useave"].as<bool>();
 
-  if (CREATE_BIN_LAYERS_FILE || CREATE_AVE_LAYERS_FILE)
+  if (CREATE_BIN_LAYERS_FILE)// || CREATE_AVE_LAYERS_FILE)
   {
     if (vm.count("lasuf"))
       LAYERS_FILE_SUFFIX = vm["lasuf"].as<std::string>();
@@ -411,6 +421,7 @@ void Parameters::generate_paths()
 
   RES_DIR = RES_TOP_DIR + "/" + stem(MESH_FILE) +
             "_" + stem(LAYERS_FILE) +
+            (USE_AVERAGED ? "ave" : "") +
             "_x" + d2s(X_END) + "_y" + d2s(Y_END) +
             "_nx" + d2s(N_FINE_X) + "_ny" + d2s(N_FINE_Y) +
             "_T" + d2s(TIME_END) + "_K" + d2s(N_TIME_STEPS) +

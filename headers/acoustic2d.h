@@ -82,8 +82,9 @@ private:
   void solve_crank_nicolson(const fem::DoFHandler &dof_handler, const fem::CSRPattern &csr_pattern);
 
   void coefficients_initialization();
-  void create_bin_layers_file() const;
-  void create_ave_layers_file() const;
+  void create_3_bin_layers_file() const;
+  void create_slop_bin_layers_file() const;
+//  void create_ave_layers_file() const;
 
   void export_coefficients(const std::string &filename) const;
   void import_coefficients(const std::string &filename);

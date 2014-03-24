@@ -24,15 +24,15 @@ public:
 //  Layer& operator =(const Layer &layer);
 //  virtual ~Layer();
 
-  /**
-   * Initialization of the (sloped) layer
-   * @param number - the number of the layer
-   * @param thickness_percent - the vector of all thicknesses of all layers in the domain bounded by 2 points
-   * @param min_point - the min point of the domain where the layers are supposed to be
-   * @param max_point - the max point of the domain where the layers are supposed to be
-   * @param angle - the slope angle in degrees (in respect of OX axis - so the angle 0 means horizontal layer),
-   *                the possible range of the angle values is (-90, 90), not including right angles
-   */
+            /**
+             * Initialization of the (sloped) layer
+             * @param number - the number of the layer
+             * @param thickness_percent - the vector of all thicknesses of all layers in the domain bounded by 2 points
+             * @param min_point - the min point of the domain where the layers are supposed to be
+             * @param max_point - the max point of the domain where the layers are supposed to be
+             * @param angle - the slope angle in degrees (in respect of OX axis - so the angle 0 means horizontal layer),
+             *                the possible range of the angle values is (-90, 90), not including right angles
+             */
   void init(unsigned int number, const std::vector<double> &thickness_percent,
             const fem::Point &min_point, const fem::Point &max_point,
             double angle);
@@ -43,21 +43,24 @@ public:
              */
   bool contains_element(const fem::Rectangle &cell, const std::vector<fem::Point> &points) const;
 
+  double thickness() const;
+
 private:
   unsigned int _number;
   double _thickness_percent;
+  double _thickness;
   double _angle;
   double _angle_rad_abs;
   fem::Point _min_point;
   fem::Point _max_point;
 
-  /**
-   * The layer has 2 sides parallel to OY axis, and 2 sides with possible slope.
-   * These sloped sides are described by 2 equations:
-   * y = _a_bottom * x + _b_bottom,
-   * y = _a_top * x + _b_top,
-   * Both equations are used to determine whether some point belongs to the layer or not.
-   */
+            /**
+             * The layer has 2 sides parallel to OY axis, and 2 sides with possible slope.
+             * These sloped sides are described by 2 equations:
+             * y = _a_bottom * x + _b_bottom,
+             * y = _a_top * x + _b_top,
+             * Both equations are used to determine whether some point belongs to the layer or not.
+             */
   double _a_bottom, _a_top;
   double _b_bottom, _b_top;
 

@@ -127,9 +127,11 @@ public:
   std::string LAYERS_DIR;
   bool USE_LAYERS_FILE;
   bool CREATE_BIN_LAYERS_FILE;
-  bool CREATE_AVE_LAYERS_FILE;
+  std::string WHAT_BIN_LAYERS_FILE;
+  //bool CREATE_AVE_LAYERS_FILE;
   double H_BIN_LAYER_PERCENT;
   std::string LAYERS_FILE_SUFFIX;
+  bool USE_AVERAGED;
 
             /**
              * Whether we need to save a coefficients distribution for further usage in other programs or in this one

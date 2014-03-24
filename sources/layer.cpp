@@ -67,6 +67,9 @@ void Layer::init(unsigned int number, const std::vector<double> &thickness_perce
       y_top = y_bottom + 0.01*thickness_percent[i]*Hy;
   }
   expect(y_bottom >= _min_point.coord(1), "Please check y_bottom. It's wrong.");
+  expect(y_top > y_bottom, "y_top and/or y_bottom are wrong");
+
+  _thickness = y_top - y_bottom; // real thickness of an unslopped layer
 
   // now we define y-coordinates of the real layer vertices (taking the angle into account)
   if (fabs(_angle) < fem::math::FLOAT_NUMBERS_EQUALITY_TOLERANCE) // if angle is zero, there is no stretching, and transformation is not required
@@ -179,4 +182,11 @@ bool Layer::contains_element(const fem::Rectangle &cell, const std::vector<fem::
     return true;
 
   return false; // the layer doesn't contain this cell
+}
+
+
+
+double Layer::thickness() const
+{
+  return _thickness;
 }

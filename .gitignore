@@ -1,7 +1,7 @@
 *~
 build
 *.user
-results
+results*
 *.dat
 scripts
 layers

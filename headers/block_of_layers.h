@@ -25,6 +25,11 @@ public:
                  double &coef_alpha,
                  double &coef_beta) const;
 
+  const Layer& layer_which_contains(const fem::Rectangle &cell,
+                                    const std::vector<fem::Point> &points) const;
+
+  unsigned int n_layers() const;
+
 
 private:
   double _angle;
