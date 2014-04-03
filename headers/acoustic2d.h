@@ -86,8 +86,9 @@ private:
   void create_slop_bin_layers_file() const;
 //  void create_ave_layers_file() const;
 
-  void export_coefficients(const std::string &filename) const;
-  void import_coefficients(const std::string &filename);
+  void export_coefficients_per_vertex(const std::string &filename) const;
+  void export_coefficients_per_cell(const std::string &filename) const;
+  void import_coefficients_per_vertex(const std::string &filename);
 };
 
 

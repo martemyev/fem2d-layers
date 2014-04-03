@@ -93,9 +93,9 @@ void Acoustic2D::solve_rectangles()
 //  if (_param->CREATE_AVE_LAYERS_FILE)
 //    create_ave_layers_file();
 
-  if (_param->COEF_SAVED) // if coefficients have been saved in a file,
+  if (_param->COEF_SAVED_PER_VERT) // if coefficients have been saved in a file,
   {
-    import_coefficients(_param->COEF_FILE); // we just read them and convert from vertex-wise distribution to cell-wise one
+    import_coefficients_per_vertex(_param->COEF_FILE); // we just read them and convert from vertex-wise distribution to cell-wise one
   }
   else // if the coefficients haven't been saved before, we distribute them according to layers file or other ways
   {
@@ -114,8 +114,11 @@ void Acoustic2D::solve_rectangles()
         }
       }
     }
-    if (_param->SAVE_COEF) // if we need to save coefficients after distribution,
-      export_coefficients(_param->COEF_FILE); // we convert them to vertex-wise format and export them into a file
+    require(!(_param->SAVE_COEF_PER_CELL && _param->SAVE_COEF_PER_VERT), "Conflicting options");
+    if (_param->SAVE_COEF_PER_CELL) // if we need to save coefficients after distribution - one coef per cell,
+      export_coefficients_per_cell(_param->COEF_FILE); // we just save them into a file
+    else if (_param->SAVE_COEF_PER_VERT) // if we need to save coefficients after distribution - one per vertex,
+      export_coefficients_per_vertex(_param->COEF_FILE); // we convert them to vertex-wise format and export them into a file
   }
 
 
@@ -210,11 +213,13 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
   KSP ksp;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
   KSPSetOperators(ksp, system_mat, system_mat, SAME_PRECONDITIONER);
-  KSPSetTolerances(ksp, 1e-16, 1e-30, 1e+5, 10000);
+  KSPSetTolerances(ksp, 1e-12, 1e-30, 1e+5, 10000);
 
   double *local_rhs_vec = new double[Rectangle::n_dofs_first];
 
   require(_param->N_TIME_STEPS > 1, "There is no time steps to perform: n_time_steps = " + d2s(_param->N_TIME_STEPS));
+
+  const RHSFunction rhs_function(*_param);
 
   if (_param->PRINT_INFO)
     std::cout << "time loop started..." << std::endl;
@@ -226,7 +231,6 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     VecSet(solution, 0.); // zeroing the solution vector
 
     // assemble some parts of system rhs vector
-    const RHSFunction rhs_function(*_param);
     for (unsigned int cell = 0; cell < _fmesh.n_rectangles(); ++cell)
     {
       Rectangle rectangle = _fmesh.rectangle(cell);
@@ -244,9 +248,6 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
       }
     } // rhs part assembling
 
-    double rhs_norm;
-    VecNorm(system_rhs, NORM_2, &rhs_norm);
-
     MatMult(_global_stiff_mat, solution_1, temp);
     VecAXPBY(system_rhs, -dt*dt, dt*dt, temp);
 
@@ -256,16 +257,10 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
     MatMult(_global_mass_mat, solution_1, temp);
     VecAXPY(system_rhs, 2., temp);
 
-    double system_rhs_norm;
-    VecNorm(system_rhs, NORM_2, &system_rhs_norm);
-
     // impose Dirichlet boundary condition
     const BoundaryFunction boundary_function;
     for (unsigned int i = 0; i < b_nodes.size(); ++i)
       VecSetValue(system_rhs, b_nodes[i], boundary_function.value(_fmesh.vertex(b_nodes[i]), time), INSERT_VALUES); // change the rhs vector
-
-//    double system_rhs_norm_after_bc;
-//    VecNorm(system_rhs, NORM_2, &system_rhs_norm_after_bc);
 
     // solve the SLAE
     KSPSolve(ksp, system_rhs, solution);
@@ -294,6 +289,10 @@ void Acoustic2D::solve_explicit_rectangles(const DoFHandler &dof_handler, const 
 
     if (_param->PRINT_INFO)
     {
+      double rhs_norm;
+      VecNorm(system_rhs, NORM_2, &rhs_norm);
+      double system_rhs_norm;
+      VecNorm(system_rhs, NORM_2, &system_rhs_norm);
       double norm;
       VecNorm(solution, NORM_2, &norm);
       std::cout.setf(std::ios::scientific);
@@ -727,7 +726,7 @@ void Acoustic2D::create_slop_bin_layers_file() const
 
 
 
-void Acoustic2D::export_coefficients(const std::string &filename) const
+void Acoustic2D::export_coefficients_per_vertex(const std::string &filename) const
 {
   // since a part of software that will use this coefficients distribution
   // is based on suggestion that coefficients are vertex-wise distributed
@@ -840,7 +839,32 @@ void Acoustic2D::export_coefficients(const std::string &filename) const
 
 
 
-void Acoustic2D::import_coefficients(const std::string &filename)
+void Acoustic2D::export_coefficients_per_cell(const std::string &filename) const
+{
+  // since we already have cell-wise distribution of coefficients
+  // we just save them in a file
+
+  const unsigned int nx = _param->N_FINE_X; // for brevity
+  const unsigned int ny = _param->N_FINE_Y; // for brevity
+
+  expect(_coef_alpha.size() == nx * ny, "The size of coef alpha vector is somehow incorrect");
+  expect(_coef_beta.size()  == nx * ny, "The size of coef beta vector is somehow incorrect");
+
+  std::ofstream out(filename.c_str());
+  require(out, "File " + filename + " cannot be opened");
+  out.setf(std::ios::scientific);
+  out.precision(14);
+
+  out << nx * ny << "\n";
+  for (unsigned int i = 0; i < nx * ny; ++i)
+    out << _coef_alpha[i] << " " << _coef_beta[i] << "\n";
+
+  out.close();
+}
+
+
+
+void Acoustic2D::import_coefficients_per_vertex(const std::string &filename)
 {
   // for some explanation see comments from export_coefficients function.
   // here we read a set of coefficients and convert them to cell-wise representation,

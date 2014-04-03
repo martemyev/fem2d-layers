@@ -136,12 +136,13 @@ public:
             /**
              * Whether we need to save a coefficients distribution for further usage in other programs or in this one
              */
-  bool SAVE_COEF;
+  bool SAVE_COEF_PER_CELL;
+  bool SAVE_COEF_PER_VERT;
 
             /**
              * Is there a file with saved coefficients distribution, or not
              */
-  bool COEF_SAVED;
+  bool COEF_SAVED_PER_VERT;
 
             /**
              * A name of file where a coefficients distribution will be (or has been) kept

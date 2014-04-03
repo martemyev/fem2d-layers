@@ -36,8 +36,9 @@ void Parameters::default_parameters()
   USE_AVERAGED = false;
 
   COEF_FILE = "coef.dat";
-  SAVE_COEF = false;
-  COEF_SAVED = false;
+  SAVE_COEF_PER_CELL = false;
+  SAVE_COEF_PER_VERT = false;
+  COEF_SAVED_PER_VERT = false;
 
   RES_TOP_DIR = "../results/"; // this top level directory containing all results usually exists on the same level as 'build', 'sources', 'headers' directories
   RES_DIR = ""; // should be changed and based on some parameters
@@ -59,7 +60,7 @@ void Parameters::default_parameters()
   FE_ORDER = 1;
   //QUAD_ORDER = 3;
   SOURCE_FREQUENCY = 20;
-  SOURCE_SUPPORT = 10;
+  SOURCE_SUPPORT = 0.1;
   SOURCE_CENTER_X = 0.5;
   SOURCE_CENTER_Y = 0.5;
 
@@ -92,8 +93,9 @@ void Parameters::read_from_command_line(int argc, char **argv)
     ("ladir",    po::value<std::string>(),  std::string("path to a directory with layers files (" + LAYERS_DIR + ")").c_str())
     ("coefdir",  po::value<std::string>(),  std::string("path to a directory with coefficients files (" + COEF_DIR + ")").c_str())
     ("coeffile", po::value<std::string>(),  std::string("name of file with coefficients distribution (" + COEF_FILE + ")").c_str())
-    ("savecoef", po::value<bool>(),         std::string("need to save coefficients distribution to a file? (" + d2s(SAVE_COEF) + ")").c_str())
-    ("cosaved",  po::value<bool>(),         std::string("is coefficients distribution already saved? (" + d2s(COEF_SAVED) + ")").c_str())
+    ("savcocel", po::value<bool>(),         std::string("need to save coefficients distribution (one coef per cell) to a file? (" + d2s(SAVE_COEF_PER_CELL) + ")").c_str())
+    ("savcover", po::value<bool>(),         std::string("need to save coefficients distribution (one coef per vertex) to a file? (" + d2s(SAVE_COEF_PER_VERT) + ")").c_str())
+    ("cosavedv", po::value<bool>(),         std::string("is coefficients distribution already saved (one coef per vertex)? (" + d2s(COEF_SAVED_PER_VERT) + ")").c_str())
     ("lafile",   po::value<std::string>(),  std::string("name of file with parameters of layers (" + LAYERS_FILE + ")").c_str())
     ("lasuf",    po::value<std::string>(),  std::string("suffix to distinguish several layers files when we create them (" + LAYERS_FILE_SUFFIX + ")").c_str())
     ("lacrebin", po::value<bool>(),         std::string("create (1) or don't (0) a new binary layers file (" + d2s(CREATE_BIN_LAYERS_FILE) + ")").c_str())
@@ -162,13 +164,17 @@ void Parameters::read_from_command_line(int argc, char **argv)
   if (vm.count("coeffile"))
     COEF_FILE = vm["coeffile"].as<std::string>();
 
-  if (vm.count("savecoef"))
-    SAVE_COEF = vm["savecoef"].as<bool>();
+  if (vm.count("savcocel"))
+    SAVE_COEF_PER_CELL = vm["savcocel"].as<bool>();
+  if (vm.count("savcover"))
+    SAVE_COEF_PER_VERT = vm["savcover"].as<bool>();
 
-  if (vm.count("cosaved"))
-    COEF_SAVED = vm["cosaved"].as<bool>();
+  require(!(SAVE_COEF_PER_CELL && SAVE_COEF_PER_VERT), "There are two conflicting options which are ON: savcocel and savcover");
 
-  require(!(SAVE_COEF && COEF_SAVED), "There are two conflicting options which are ON: savecoef and cosaved");
+  if (vm.count("cosavedc"))
+    COEF_SAVED_PER_VERT = vm["cosavedc"].as<bool>();
+
+  require(!((SAVE_COEF_PER_CELL || SAVE_COEF_PER_VERT) && COEF_SAVED_PER_VERT), "There are two conflicting options which are ON: (savcocell or savcover) and cosavedc");
 
   if (vm.count("ladir"))
   {
@@ -275,8 +281,8 @@ void Parameters::read_from_command_line(int argc, char **argv)
     SOURCE_FREQUENCY = vm["f0"].as<double>();
   require(SOURCE_FREQUENCY > 0, "Frequency is wrong");
   if (vm.count("p"))
-    SOURCE_SUPPORT = vm["p"].as<double>();
-  require(SOURCE_SUPPORT > 0, "Source support is wrong");
+    SOURCE_SUPPORT = vm["p"].as<double>(); // it can be negative. in this case the |p|*hx is used
+//  require(SOURCE_SUPPORT > 0, "Source support is wrong");
   if (vm.count("xcen"))
     SOURCE_CENTER_X = vm["xcen"].as<double>();
   if (vm.count("ycen"))
@@ -451,15 +457,15 @@ void Parameters::check_clean_dirs() const
     remove_all(cur_res_dir); // remove all contents of the directory and the directory itself
   create_directory(cur_res_dir); // now create empty directory
 
-  if (PRINT_VTU)
+//  if (PRINT_VTU)
     create_directory(VTU_DIR);
 
   if (SAVE_SOL)
     create_directory(SOL_DIR);
 
   path coef_dir(COEF_DIR);
-  if (SAVE_COEF)
+  if (SAVE_COEF_PER_CELL || SAVE_COEF_PER_VERT)
     create_directory(coef_dir);
-  if (COEF_SAVED)
+  if (COEF_SAVED_PER_VERT)
     require(exists(coef_dir), "There is a coef_saved options turned on, but the directory with coefficients files doesn't exists");
 }
