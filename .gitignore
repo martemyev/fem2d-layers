@@ -1,6 +1,6 @@
 *~
 build
-*.user
+*.user*
 results*
 *.dat
 scripts

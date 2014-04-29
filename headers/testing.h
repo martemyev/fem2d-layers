@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include "analytic_functions.h"
+#include "fem/function.h"
 
 
 // =================================
@@ -620,4 +621,20 @@ TEST(EllipticAnalyticSolutionRectanglesDiffDomainsAndMeshes, AnalyticFunction_ex
 //  check_elliptic_solution_rectangles(1, 131, 151, an_solution_4(), an_rhs_function_4(),
 //                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
 //                                     1000, 1500, 1000, 1500);
+}
+
+
+
+// =================================
+//
+// =================================
+TEST(EllipticAnalyticSolutionRectanglesConstants, AnalyticFunction_constant_1)
+{
+  double cur_error, prev_error = -1;
+  int cur_n_cells, prev_n_cells = 0;
+
+  // sparse solvers
+  check_elliptic_solution_rectangles(1, 2, 2, fem::ConstantFunction(1), fem::ConstantFunction(0),
+                                     cur_error, cur_n_cells, prev_error, prev_n_cells,
+                                     0, 10, 0, 10);
 }
