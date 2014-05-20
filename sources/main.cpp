@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 //#endif
 
   Acoustic2D problem(&param);
-  problem.solve_rectangles();
+  problem.solve_triangles();
 
   PetscFinalize();
 

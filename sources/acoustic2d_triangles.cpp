@@ -266,7 +266,36 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
       out.close();
     }
 
+    if (_param->PRINT_INFO)
+    {
+      double rhs_norm;
+      VecNorm(system_rhs, NORM_2, &rhs_norm);
+      double system_rhs_norm;
+      VecNorm(system_rhs, NORM_2, &system_rhs_norm);
+      double norm;
+      VecNorm(solution, NORM_2, &norm);
+      std::cout.setf(std::ios::scientific);
+      std::cout.precision(4);
+      std::cout << "  step " << time_step << " norm " << norm << " rhs_norm " << rhs_norm
+                << " sys_rhs_norm " << system_rhs_norm << std::endl;
+    }
+
   } // time loop
+
+  // extract data from PETSc vector
+  std::vector<int> idx(csr_pattern.order());
+  std::iota(idx.begin(), idx.end(), 0); // idx = { 0, 1, 2, 3, .... }
+  std::vector<double> solution_values(csr_pattern.order());
+  VecGetValues(solution, csr_pattern.order(), &idx[0], &solution_values[0]);
+  const std::string sol_filename = stem(_param->MESH_FILE) + "_sol.dat";
+  std::ofstream out(sol_filename.c_str());
+  require(out, "File " + sol_filename + " can't be opened");
+  out.setf(std::ios_base::scientific);
+  out.precision(14);
+  out << solution_values.size() << "\n";
+  for (unsigned i = 0; i < solution_values.size(); ++i)
+    out << solution_values[i];
+  out.close();
 
   KSPDestroy(&ksp);
 
