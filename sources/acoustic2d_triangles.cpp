@@ -294,7 +294,7 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
   out.precision(14);
   out << solution_values.size() << "\n";
   for (unsigned i = 0; i < solution_values.size(); ++i)
-    out << solution_values[i];
+    out << solution_values[i] << "\n";
   out.close();
 
   KSPDestroy(&ksp);
