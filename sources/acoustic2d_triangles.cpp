@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <fstream>
 
+#define WATCH_RHS
+
 using namespace fem;
 
 
@@ -240,6 +242,14 @@ void Acoustic2D::solve_explicit_triangles(const DoFHandler &dof_handler, const C
 //      VecSetValue(exact_solution, i, an_solution(vert, time), INSERT_VALUES);
 //    }
 //    std::cout << "time step = " << time_step << " time = " << time << " relative error = " << rel_error(solution, exact_solution) << std::endl;
+
+#if defined(WATCH_RHS)
+    {
+      Result res(&dof_handler);
+      std::string fname = _param->VTU_DIR + "/rhs-" + d2s(time_step) + ".vtu";
+      res.write_vtu(fname, system_rhs);
+    }
+#endif
 
     if ((_param->PRINT_VTU && (time_step % _param->VTU_STEP == 0)) || (time_step == _param->N_TIME_STEPS))
     {
