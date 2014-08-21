@@ -91,7 +91,7 @@ endif(NOT PETSC_LIB)
 
 
 # --- mpi ---
-set(MPI_LIB libmpi.so ${LIB_DIR})
+find_library(MPI_LIB libmpi.so ${LIB_DIR})
 if(NOT MPI_LIB)
   message(FATAL_ERROR "mpi library was not found!")
 endif(NOT MPI_LIB)
