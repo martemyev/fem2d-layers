@@ -1,0 +1,2 @@
+./fem2d_acoustic --nt 2000 --tend 0.4 --vtu_step 50 --sol_step 50 --nfx 500 --nfy 500 --lafile lay_3_ave_0.4.dat --x1 1000 --y1 1000 --lacreave 1 --hlayer 0.4 --b1val 4e+6 --b2val 9e+6 --f0 50 --inf 1 --xcen 500 --ycen 150 --expcoef 1
+

@@ -2,6 +2,3 @@
 build
 *.user*
 results*
-*.dat
-scripts
-layers
